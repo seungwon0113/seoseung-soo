@@ -68,7 +68,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (cartForm) {
         cartForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
+            const hasSizeOptions = document.querySelectorAll('.size-btn').length > 0;
+            const selectedSizeId = document.getElementById('selectedSizeId');
+            if (hasSizeOptions && selectedSizeId && !selectedSizeId.value) {
+                const message = '사이즈를 선택해주세요.';
+                if (typeof toast !== 'undefined') {
+                    toast.error(message, '알림');
+                } else {
+                    alert(message);
+                }
+                return;
+            }
+
             const quantityDisplay = document.getElementById('quantityDisplay');
             const cartQuantity = document.getElementById('cartQuantity');
             
@@ -421,6 +432,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (drawerCartForm) {
         drawerCartForm.addEventListener('submit', function(e) {
             e.preventDefault();
+
+            const hasDrawerSizeOptions = document.querySelectorAll('.drawer-size-btn').length > 0;
+            const drawerSelectedSizeId = document.getElementById('drawerSelectedSizeId');
+            if (hasDrawerSizeOptions && drawerSelectedSizeId && !drawerSelectedSizeId.value) {
+                const message = '사이즈를 선택해주세요.';
+                if (typeof toast !== 'undefined') {
+                    toast.error(message, '알림');
+                } else {
+                    alert(message);
+                }
+                return;
+            }
 
             const drawerCartQuantity = document.getElementById('drawerCartQuantity');
             const drawerQuantityDisplay = document.getElementById('drawerQuantityDisplay');
