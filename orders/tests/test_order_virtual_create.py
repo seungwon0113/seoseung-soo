@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from config.utils.setup_test_method import TestSetupMixin
 from orders.models import Order, OrderItem
+from orders.services.order_services import OrderService
 from products.models import Color
 
 
@@ -34,13 +35,24 @@ class TestOrderCreateVirtualView(TestSetupMixin):
         self.product.price = 35000
         self.product.save()
 
+        items_data = [
+            {
+                "product_id": self.product.id,
+                "quantity": 2,
+            }
+        ]
+
+        is_valid, error_message, validated_items, total_amount = (
+            OrderService.validate_and_prepare_order_items(items_data)
+        )
+        assert is_valid
+
+        preorder_key = OrderService.create_preorder_cache(
+            self.customer_user.id, validated_items, total_amount
+        )
+
         payload: Dict[str, Any] = {
-            "items": [
-                {
-                    "product_id": self.product.id,
-                    "quantity": 2,
-                }
-            ]
+            "preOrderKey": preorder_key
         }
 
         response = self.client.post(
@@ -75,14 +87,25 @@ class TestOrderCreateVirtualView(TestSetupMixin):
         color = Color.objects.create(name="빨강", hex_code="#FF0000")
         self.product.colors.add(color)
 
+        items_data = [
+            {
+                "product_id": self.product.id,
+                "color_id": color.id,
+                "quantity": 1,
+            }
+        ]
+
+        is_valid, error_message, validated_items, total_amount = (
+            OrderService.validate_and_prepare_order_items(items_data)
+        )
+        assert is_valid
+
+        preorder_key = OrderService.create_preorder_cache(
+            self.customer_user.id, validated_items, total_amount
+        )
+
         payload: Dict[str, Any] = {
-            "items": [
-                {
-                    "product_id": self.product.id,
-                    "color_id": color.id,
-                    "quantity": 1,
-                }
-            ]
+            "preOrderKey": preorder_key
         }
 
         response = self.client.post(
@@ -100,13 +123,13 @@ class TestOrderCreateVirtualView(TestSetupMixin):
         assert order_item is not None
         assert order_item.color == color
 
-    def test_create_virtual_order_invalid_items(self) -> None:
+    def test_create_virtual_order_missing_preorder_key(self) -> None:
         self.client.force_login(self.customer_user)
 
         payload: Dict[str, Any] = {
             "items": [
                 {
-                    "product_id": 99999,  # 존재하지 않는 상품
+                    "product_id": self.product.id,
                     "quantity": 1,
                 }
             ]
@@ -121,13 +144,13 @@ class TestOrderCreateVirtualView(TestSetupMixin):
         assert response.status_code == 400
         data = response.json()
         assert "error" in data
-        assert "존재하지 않는 상품" in data["error"]
+        assert "preOrderKey가 필요합니다." in data["error"]
 
-    def test_create_virtual_order_empty_items(self) -> None:
+    def test_create_virtual_order_invalid_preorder_key(self) -> None:
         self.client.force_login(self.customer_user)
 
         payload: Dict[str, Any] = {
-            "items": []
+            "preOrderKey": "order:preorder:invalid"
         }
 
         response = self.client.post(
@@ -139,4 +162,40 @@ class TestOrderCreateVirtualView(TestSetupMixin):
         assert response.status_code == 400
         data = response.json()
         assert "error" in data
-        assert "주문 항목이 비어있습니다" in data["error"]
+        assert "주문 정보가 만료되었거나 유효하지 않습니다." in data["error"]
+
+    def test_create_virtual_order_unauthorized_preorder_key(self) -> None:
+        self.client.force_login(self.customer_user)
+        self.product.price = 35000
+        self.product.save()
+
+        items_data = [
+            {
+                "product_id": self.product.id,
+                "quantity": 1,
+            }
+        ]
+
+        is_valid, error_message, validated_items, total_amount = (
+            OrderService.validate_and_prepare_order_items(items_data)
+        )
+        assert is_valid
+
+        preorder_key = OrderService.create_preorder_cache(
+            self.admin_user.id, validated_items, total_amount
+        )
+
+        payload: Dict[str, Any] = {
+            "preOrderKey": preorder_key
+        }
+
+        response = self.client.post(
+            reverse("orders:virtual-create"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+        assert response.status_code == 403
+        data = response.json()
+        assert "error" in data
+        assert "권한이 없습니다." in data["error"]
