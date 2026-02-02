@@ -555,6 +555,17 @@ function handleImmediatePurchase(isMobileDrawer) {
         }
     }
 
+    const hasSizeOptions = document.querySelectorAll('.size-btn, .drawer-size-btn').length > 0;
+    if (hasSizeOptions && !sizeId) {
+        const message = '사이즈를 선택해주세요.';
+        if (typeof toast !== 'undefined') {
+            toast.error(message, '알림');
+        } else {
+            alert(message);
+        }
+        return;
+    }
+
     const items = [
         {
             product_id: productId,
