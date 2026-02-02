@@ -461,6 +461,39 @@ function initializeTossPaymentWidget(paymentData, amount) {
     });
 }
 
+function validateDeliveryForm() {
+    const recipientName = document.getElementById('recipientName');
+    const addressInput = document.querySelector('.address-input');
+    const phone1 = document.getElementById('phone1');
+    const phone2 = document.getElementById('phone2');
+    const phone3 = document.getElementById('phone3');
+    const emailId = document.getElementById('emailId');
+    const emailDomain = document.getElementById('emailDomain');
+
+    if (!recipientName || !recipientName.value.trim()) {
+        return { valid: false, message: '받는사람을 입력해주세요.' };
+    }
+
+    if (!addressInput || !addressInput.value.trim()) {
+        return { valid: false, message: '주소를 입력해주세요.' };
+    }
+
+    if (!phone1 || !phone2 || !phone3 ||
+        !phone1.value.trim() || !phone2.value.trim() || !phone3.value.trim()) {
+        return { valid: false, message: '휴대전화를 입력해주세요.' };
+    }
+
+    if (!emailId || !emailId.value.trim()) {
+        return { valid: false, message: '이메일을 입력해주세요.' };
+    }
+
+    if (!emailDomain || !emailDomain.value.trim()) {
+        return { valid: false, message: '이메일 도메인을 선택해주세요.' };
+    }
+
+    return { valid: true, message: '' };
+}
+
 function setupTossPayment() {
     const tossPaymentBtn = document.getElementById('tossPaymentBtn');
     if (!tossPaymentBtn) {
@@ -469,6 +502,12 @@ function setupTossPayment() {
     
     tossPaymentBtn.addEventListener('click', function(e) {
         e.preventDefault();
+        
+        const validation = validateDeliveryForm();
+        if (!validation.valid) {
+            alert(validation.message);
+            return;
+        }
         
         const preOrderKey = tossPaymentBtn.getAttribute('data-pre-order-key');
         const amount = parseInt(tossPaymentBtn.getAttribute('data-amount')) || 0;

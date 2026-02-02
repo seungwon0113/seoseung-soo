@@ -27,17 +27,17 @@ class OrderCreateVirtualView(LoginRequiredMixin, View):
         user = cast(User, request.user)
 
         pre_order_key = data.get("preOrderKey")
-        if pre_order_key:
-            cache_data = CacheHelper.get(pre_order_key)
-            if not cache_data:
-                return JsonResponse(
-                    {"error": "주문 정보가 만료되었거나 유효하지 않습니다."}, status=400
-                )
-            if cache_data.get("user_id") != user.id:
-                return JsonResponse({"error": "권한이 없습니다."}, status=403)
-            items_data = cache_data.get("items", [])
-        else:
-            items_data = data.get("items", [])
+        if not pre_order_key:
+            return JsonResponse({"error": "preOrderKey가 필요합니다."}, status=400)
+        cache_data = CacheHelper.get(pre_order_key)
+        if not cache_data:
+            return JsonResponse(
+                {"error": "주문 정보가 만료되었거나 유효하지 않습니다."},
+                status=400,
+            )
+        if cache_data.get("user_id") != user.id:
+            return JsonResponse({"error": "권한이 없습니다."}, status=403)
+        items_data = cache_data.get("items", [])
 
         is_valid, error_message, validated_items, total_amount = (
             OrderService.validate_and_prepare_order_items(items_data)

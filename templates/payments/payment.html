@@ -23,7 +23,7 @@
                         <label class="form-label">받는사람<span class="required">*</span></label>
                     </div>
                     <div class="form-input-cell">
-                        <input type="text" class="form-input" placeholder="이름을 입력해주세요" required>
+                        <input type="text" id="recipientName" class="form-input" placeholder="이름을 입력해주세요" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -48,11 +48,11 @@
                 </div>
                 <div class="form-input-cell">
                     <div class="phone-input-wrapper">
-                        <input type="tel" class="form-input phone-input" placeholder="010" maxlength="3" required>
+                        <input type="tel" id="phone1" class="form-input phone-input" placeholder="010" maxlength="3" required>
                         <span class="phone-separator">-</span>
-                        <input type="tel" class="form-input phone-input" placeholder="1234" maxlength="4" required>
+                        <input type="tel" id="phone2" class="form-input phone-input" placeholder="1234" maxlength="4" required>
                         <span class="phone-separator">-</span>
-                        <input type="tel" class="form-input phone-input" placeholder="5678" maxlength="4" required>
+                        <input type="tel" id="phone3" class="form-input phone-input" placeholder="5678" maxlength="4" required>
                     </div>
                 </div>
             </div>
@@ -63,9 +63,9 @@
                 </div>
                 <div class="form-input-cell">
                     <div class="email-input-wrapper">
-                        <input type="text" class="form-input email-input" placeholder="example" required>
+                        <input type="text" id="emailId" class="form-input email-input" placeholder="example" required>
                         <span class="email-at">@</span>
-                        <select class="form-input email-domain">
+                        <select id="emailDomain" class="form-input email-domain">
                             <option value="naver.com">naver.com</option>
                             <option value="gmail.com">gmail.com</option>
                             <option value="daum.net">daum.net</option>
