@@ -231,6 +231,51 @@
             </div>
         </div>
 
+        <div class="payment-method-container">
+            <div class="form-section">
+                <h3 class="section-title">결제 수단</h3>
+                <div class="payment-method-options">
+                    <label class="payment-method-option selected" data-method="card">
+                        <input type="radio" name="payment-method" value="card" checked>
+                        <div class="option-content">
+                            <span class="option-text">카드 결제</span>
+                            <span class="option-desc">토스페이먼츠</span>
+                        </div>
+                        <span class="check-icon">✓</span>
+                    </label>
+                    <label class="payment-method-option" data-method="virtual">
+                        <input type="radio" name="payment-method" value="virtual">
+                        <div class="option-content">
+                            <span class="option-text">무통장 입금</span>
+                            <span class="option-desc">가상계좌</span>
+                        </div>
+                        <span class="check-icon">✓</span>
+                    </label>
+                </div>
+
+                <div class="virtual-account-section" id="virtualAccountSection" style="display: none;">
+                    <div class="bank-select-wrapper">
+                        <label class="bank-select-label">입금 은행 선택</label>
+                        <select class="bank-select" id="bankSelect">
+                            <option value="">은행을 선택해주세요</option>
+                            {% for code, name in bank_choices %}
+                            <option value="{{ code }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="depositor-name-wrapper">
+                        <label class="depositor-name-label">입금자명</label>
+                        <input type="text" class="depositor-name-input" id="depositorName" placeholder="입금자명을 입력해주세요">
+                    </div>
+                    <div class="virtual-account-notice">
+                        <p>• 가상계좌는 주문 건당 고유 계좌번호가 발급됩니다.</p>
+                        <p>• 발급된 계좌번호로 24시간 내에 입금해주세요.</p>
+                        <p>• 입금 확인 후 자동으로 결제가 완료됩니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="payment-button-container">
         <div class="payment-section">
             {% if pre_order_key %}

@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePaymentPage();
 });
 
+window.selectedPaymentMethod = 'card';
+
 function initializePaymentPage() {
     setupPaymentMethodSelection();
     setupCouponApplication();
@@ -13,43 +15,42 @@ function initializePaymentPage() {
 }
 
 function setupPaymentMethodSelection() {
-    const paymentMethods = document.querySelectorAll('.payment-method');
+    const paymentMethodOptions = document.querySelectorAll('.payment-method-option');
+    const virtualAccountSection = document.getElementById('virtualAccountSection');
+    const paymentButton = document.getElementById('tossPaymentBtn');
     
-    paymentMethods.forEach(method => {
-        method.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
+    paymentMethodOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
             const radio = this.querySelector('input[type="radio"]');
-            const dropdownContainer = document.querySelector('.card-dropdown-container');
+            const method = this.getAttribute('data-method');
             
-            if (radio.value === 'card' && this.classList.contains('selected')) {
-                if (dropdownContainer) {
-                    const isShowing = dropdownContainer.classList.contains('show');
-                    setTimeout(() => {
-                        dropdownContainer.classList.toggle('show');
-                    }, 10);
-                }
-                return;
-            }
-            
-            paymentMethods.forEach(m => {
-                m.classList.remove('selected');
-            });
-            
-            if (dropdownContainer) {
-                dropdownContainer.classList.remove('show');
-            }
+            paymentMethodOptions.forEach(opt => opt.classList.remove('selected'));
             
             this.classList.add('selected');
             radio.checked = true;
             
-            if (radio.value === 'card' && dropdownContainer) {
-                setTimeout(() => {
-                    dropdownContainer.classList.add('show');
-                }, 50);
+            window.selectedPaymentMethod = method;
+            
+            if (virtualAccountSection) {
+                if (method === 'virtual') {
+                    virtualAccountSection.style.display = 'block';
+                } else {
+                    virtualAccountSection.style.display = 'none';
+                }
             }
             
+            if (paymentButton) {
+                const amount = paymentButton.getAttribute('data-amount');
+                const formattedAmount = parseInt(amount).toLocaleString();
+                const paymentText = paymentButton.querySelector('.payment-text');
+                if (paymentText) {
+                    if (method === 'virtual') {
+                        paymentText.textContent = `${formattedAmount}원 가상계좌 발급`;
+                    } else {
+                        paymentText.textContent = `${formattedAmount}원 결제하기`;
+                    }
+                }
+            }
         });
     });
     
@@ -69,7 +70,9 @@ function setupCardOptionSelection() {
             window.selectedCardType = cardType;
             
             const dropdown = this.closest('.card-dropdown');
-            dropdown.classList.remove('show');
+            if (dropdown) {
+                dropdown.classList.remove('show');
+            }
             
             updateSelectedCardDisplay(cardName);
         });
@@ -456,7 +459,11 @@ function setupTossPayment() {
             return;
         }
         
-        requestTossPayment(preOrderKey, amount);
+        if (window.selectedPaymentMethod === 'virtual') {
+            requestVirtualAccountPayment(preOrderKey, amount);
+        } else {
+            requestTossPayment(preOrderKey, amount);
+        }
     });
 }
 
@@ -511,4 +518,140 @@ function getCsrfToken() {
     }
     
     return '';
+}
+
+function requestVirtualAccountPayment(preOrderKey, amount) {
+    const bankSelect = document.getElementById('bankSelect');
+    const depositorName = document.getElementById('depositorName');
+    const paymentButton = document.getElementById('tossPaymentBtn');
+    
+    if (!bankSelect || !bankSelect.value) {
+        alert('입금 은행을 선택해주세요.');
+        return;
+    }
+    
+    if (!depositorName || !depositorName.value.trim()) {
+        alert('입금자명을 입력해주세요.');
+        return;
+    }
+    
+    const originalText = paymentButton.innerHTML;
+    paymentButton.innerHTML = '<span class="payment-text">가상계좌 발급 중...</span>';
+    paymentButton.disabled = true;
+    
+    fetch('/orders/virtual/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            preOrderKey: preOrderKey
+        })
+    })
+    .then(response => response.json())
+    .then(orderData => {
+        if (!orderData.success && !orderData.orderId) {
+            throw new Error(orderData.error || '주문 생성에 실패했습니다.');
+        }
+        
+        const orderId = orderData.orderId;
+        
+        return fetch('/payments/toss/virtual/request/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                orderId: orderId,
+                customerName: depositorName.value.trim(),
+                bank: bankSelect.value
+            })
+        });
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showVirtualAccountResult(data);
+        } else {
+            throw new Error(data.error || '가상계좌 발급에 실패했습니다.');
+        }
+    })
+    .catch(error => {
+        alert(error.message || '가상계좌 발급 중 오류가 발생했습니다.');
+        paymentButton.innerHTML = originalText;
+        paymentButton.disabled = false;
+    });
+}
+
+function showVirtualAccountResult(data) {
+    let modal = document.getElementById('virtualResultModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'virtualResultModal';
+        modal.className = 'virtual-result-modal';
+        document.body.appendChild(modal);
+    }
+    
+    const bankNames = {
+        'KOOKMIN': '국민은행',
+        'SHINHAN': '신한은행',
+        'WOORI': '우리은행',
+        'NH': '농협은행',
+    };
+    
+    const bankName = bankNames[data.bank] || data.bank;
+    const dueDate = data.due_date ? formatDueDate(data.due_date) : '24시간 내';
+    
+    modal.innerHTML = `
+        <div class="virtual-result-content">
+            <div class="virtual-result-icon">🏦</div>
+            <h3 class="virtual-result-title">가상계좌가 발급되었습니다</h3>
+            <div class="virtual-result-info">
+                <div class="virtual-result-row">
+                    <span class="label">은행</span>
+                    <span class="value">${bankName}</span>
+                </div>
+                <div class="virtual-result-row">
+                    <span class="label">계좌번호</span>
+                    <span class="value account-number">${data.account_number}</span>
+                </div>
+                <div class="virtual-result-row">
+                    <span class="label">예금주</span>
+                    <span class="value">${data.account_holder}</span>
+                </div>
+                <div class="virtual-result-row">
+                    <span class="label">입금기한</span>
+                    <span class="value">${dueDate}</span>
+                </div>
+            </div>
+            <p style="font-size: 13px; color: #6b7280; margin-bottom: 20px;">
+                위 계좌로 입금해주시면 자동으로 결제가 완료됩니다.
+            </p>
+            <button type="button" class="virtual-result-btn" onclick="closeVirtualResultModal()">
+                확인
+            </button>
+        </div>
+    `;
+    
+    modal.classList.add('show');
+}
+
+function closeVirtualResultModal() {
+    const modal = document.getElementById('virtualResultModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+    window.location.href = '/users/mypage/orders/';
+}
+
+function formatDueDate(dateString) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}.${month}.${day} ${hours}:${minutes}까지`;
 }

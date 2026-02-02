@@ -9,19 +9,8 @@ class BankChoices(models.TextChoices):
     KOOKMIN = "KOOKMIN", "국민은행"
     SHINHAN = "SHINHAN", "신한은행"
     WOORI = "WOORI", "우리은행"
-    HANA = "HANA", "하나은행"
     NH = "NH", "농협은행"
-    IBK = "IBK", "기업은행"
-    SC = "SC", "SC제일은행"
-    SUHYUP = "SUHYUP", "수협은행"
-    DAEGU = "DAEGU", "대구은행"
-    BUSAN = "BUSAN", "부산은행"
-    KYONGNAM = "KYONGNAM", "경남은행"
-    GWANGJU = "GWANGJU", "광주은행"
-    JEONBUK = "JEONBUK", "전북은행"
-    JEJU = "JEJU", "제주은행"
-    KAKAO = "KAKAO", "카카오뱅크"
-    TOSSBANK = "TOSSBANK", "토스뱅크"
+
 
 
 class Payment(models.Model):
