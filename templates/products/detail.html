@@ -154,7 +154,6 @@
             {% if reviews.count > 0 %}
             <button class="tab-button" data-tab="review">리뷰</button>
             {% endif %}
-            <button class="tab-button" data-tab="ai-agent">AI 에이전트</button>
         </div>
         
         <div class="tab-content">
@@ -320,73 +319,6 @@
                             </div>
                         {% endfor %}
                     {% endif %}
-                </div>
-            </div>
-
-            <div class="tab-panel" id="ai-agent">
-                <div class="ai-agent-content">
-                    <h3>AI 가상 피팅</h3>
-                    <div class="ai-chat">
-                        <div class="ai-message">
-                            <div class="ai-avatar">SSS</div>
-                            <div class="ai-text">
-                                안녕하세요! AI 가상 피팅 서비스입니다.
-                                셀카나 전신 사진을 업로드하시면 이 상품을 입어보신 모습을 확인하실 수 있습니다.
-                                전신이 잘 나온 사진일수록 더 정확한 결과를 얻을 수 있어요!
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="photo-upload-area">
-                        <div class="upload-section">
-                            <div class="upload-box" id="uploadBox">
-                                <div class="upload-icon">📷</div>
-                                <div class="upload-text">
-                                    <h4>사진을 업로드해주세요</h4>
-                                    <p>셀카나 전신 사진을 드래그하거나 클릭하여 업로드</p>
-                                    <p class="upload-hint">JPG, PNG 파일만 지원 (최대 10MB)</p>
-                                </div>
-                                <input type="file" id="photoInput" accept="image/*" style="display: none;">
-                            </div>
-
-                            <div class="uploaded-photo" id="uploadedPhoto" style="display: none;">
-                                <div class="photo-preview">
-                                    <img id="previewImage" src="" alt="업로드된 사진">
-                                    <button class="remove-photo" id="removePhoto">×</button>
-                                </div>
-                                <div class="photo-info">
-                                    <p class="photo-name" id="photoName"></p>
-                                    <p class="photo-size" id="photoSize"></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="ai-process-section" id="aiProcessSection" style="display: none;">
-                            <button class="ai-process-btn" id="aiProcessBtn">
-                                <span class="btn-icon">✨</span>
-                                <span class="btn-text">AI 가상 피팅 시작</span>
-                            </button>
-                            <p class="process-hint">AI가 사진을 분석하여 가상 피팅을 진행합니다.</p>
-                        </div>
-
-                        <div class="ai-result-section" id="aiResultSection" style="display: none;">
-                            <h4>가상 피팅 결과</h4>
-                            <div class="result-images">
-                                <div class="result-item">
-                                    <h5>원본 사진</h5>
-                                    <img id="originalResult" src="" alt="원본 사진">
-                                </div>
-                                <div class="result-item">
-                                    <h5>가상 피팅 결과</h5>
-                                    <img id="fittingResult" src="" alt="가상 피팅 결과">
-                                </div>
-                            </div>
-                            <div class="result-actions">
-                                <button class="download-btn">결과 다운로드</button>
-                                <button class="retry-btn">다시 시도</button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
