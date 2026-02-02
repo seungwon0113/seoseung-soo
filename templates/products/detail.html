@@ -64,7 +64,7 @@
                 <div class="size-selection">
                     <div class="size-options">
                         {% for size in products.sizes.all %}
-                        <button type="button" class="size-btn{% if forloop.first %} active{% endif %}" data-size="{{ size.name }}" data-size-id="{{ size.id }}">{{ size.name }}</button>
+                        <button type="button" class="size-btn" data-size="{{ size.name }}" data-size-id="{{ size.id }}">{{ size.name }}</button>
                         {% endfor %}
                     </div>
                 </div>
@@ -102,11 +102,7 @@
                                 {% else %}
                                 <input type="hidden" name="color_id" id="selectedColorId" value="">
                                 {% endif %}
-                                {% if products.sizes.first %}
-                                <input type="hidden" name="size_id" id="selectedSizeId" value="{{ products.sizes.first.id }}">
-                                {% else %}
                                 <input type="hidden" name="size_id" id="selectedSizeId" value="">
-                                {% endif %}
                                 <button type="submit" class="btn btn-secondary">장바구니 담기</button>
                             </form>
                         {% else %}
@@ -361,7 +357,7 @@
                     <h5>사이즈</h5>
                     <div class="drawer-size-options">
                         {% for size in products.sizes.all %}
-                        <button type="button" class="drawer-size-btn{% if forloop.first %} active{% endif %}" data-size="{{ size.name }}" data-size-id="{{ size.id }}">{{ size.name }}</button>
+                        <button type="button" class="drawer-size-btn" data-size="{{ size.name }}" data-size-id="{{ size.id }}">{{ size.name }}</button>
                         {% endfor %}
                     </div>
                 </div>
@@ -392,11 +388,7 @@
                             {% else %}
                             <input type="hidden" name="color_id" id="drawerSelectedColorId" value="">
                             {% endif %}
-                            {% if products.sizes.first %}
-                            <input type="hidden" name="size_id" id="drawerSelectedSizeId" value="{{ products.sizes.first.id }}">
-                            {% else %}
                             <input type="hidden" name="size_id" id="drawerSelectedSizeId" value="">
-                            {% endif %}
                             <button type="submit" class="drawer-btn drawer-btn-secondary">장바구니</button>
                         </form>
                     {% else %}
