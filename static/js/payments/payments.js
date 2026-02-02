@@ -170,19 +170,43 @@ function setupAddressSearch() {
 }
 
 function openAddressSearch() {
-    const sampleAddress = {
-        zipcode: '12345',
-        address: '서울특별시 강남구 테헤란로 123',
-        detail: ''
-    };
-    
+    if (typeof daum === 'undefined' || !daum.Postcode) {
+        alert('우편번호 서비스를 불러올 수 없습니다. 페이지를 새로고침 후 다시 시도해주세요.');
+        return;
+    }
+
     const zipcodeInput = document.querySelector('.postal-code-input');
     const addressInput = document.querySelector('.address-input');
-    
-    if (zipcodeInput) zipcodeInput.value = sampleAddress.zipcode;
-    if (addressInput) addressInput.value = sampleAddress.address;
-    
-    showSuccessMessage('주소가 입력되었습니다.');
+    const detailInput = document.querySelector('.detail-address-input');
+
+    new daum.Postcode({
+        oncomplete: function(data) {
+            var addr = '';
+            var extraAddr = '';
+
+            if (data.userSelectedType === 'R') {
+                addr = data.roadAddress;
+                if (data.bname !== '' && /(동|로|가)$/.test(data.bname)) {
+                    extraAddr += data.bname;
+                }
+                if (data.buildingName !== '' && data.apartment === 'Y') {
+                    extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                }
+                if (extraAddr !== '') {
+                    extraAddr = ' (' + extraAddr + ')';
+                }
+            } else {
+                addr = data.jibunAddress;
+            }
+
+            if (zipcodeInput) zipcodeInput.value = data.zonecode;
+            if (addressInput) addressInput.value = addr + extraAddr;
+            if (detailInput) {
+                detailInput.value = '';
+                detailInput.focus();
+            }
+        }
+    }).open();
 }
 
 function setupFormValidation() {
