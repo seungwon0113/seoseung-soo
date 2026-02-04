@@ -246,7 +246,6 @@ function setupPointUsage() {
     const maxPoint = parseInt(pointInput.getAttribute('data-max-point')) || 0;
     const originalFinalAmount = parseInt(pointInput.getAttribute('data-final-amount')) || 0;
 
-    // 포인트 입력 이벤트 (전액 포인트 사용 가능)
     pointInput.addEventListener('input', function() {
         let value = parseInt(this.value) || 0;
         
@@ -262,7 +261,6 @@ function setupPointUsage() {
         updatePaymentAmount();
     });
 
-    // 전액사용 버튼 (전액 포인트 사용 가능)
     if (useAllPointsBtn) {
         useAllPointsBtn.addEventListener('click', function() {
             const useAmount = Math.min(maxPoint, originalFinalAmount);
@@ -630,7 +628,6 @@ function setupTossPayment() {
             return;
         }
         
-        // 전액 포인트 결제(0원)인 경우 포인트 전액 결제 API 호출
         if (amount <= 0) {
             if (usedPoints < 1000) {
                 alert('포인트는 최소 1,000P 이상부터 사용 가능합니다.');
@@ -662,7 +659,8 @@ function requestTossPayment(preOrderKey, amount) {
             'X-CSRFToken': getCsrfToken()
         },
         body: JSON.stringify({
-            preOrderKey: preOrderKey
+            preOrderKey: preOrderKey,
+            usedPoint: window.usedPoints || 0
         })
     })
     .then(response => response.json())

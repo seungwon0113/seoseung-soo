@@ -61,7 +61,6 @@ class PointOnlyPaymentView(LoginRequiredMixin, View):
                 status=400,
             )
 
-        # 실제 차감할 포인트는 결제 금액을 초과하지 않도록
         used_point_value = min(used_point, total_amount)
 
         is_valid, error_message, validated_items, _ = (

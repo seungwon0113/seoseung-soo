@@ -51,14 +51,17 @@ class TossPaymentService:
     def prepare_payment_request(
         pre_order_key: str,
         cache_data: Dict[str, Any],
-        base_url: str
+        base_url: str,
+        used_point: int = 0,
     ) -> Tuple[str, str, int, Dict[str, Any]]:
         order_id = TossPaymentService.generate_order_id()
         items_data = cache_data.get("items", [])
         order_name = TossPaymentService.generate_order_name(items_data)
-        amount = cache_data.get("amount", 0)
-        shipping_fee = TossPaymentService.calculate_shipping_fee(amount)
-        final_amount = amount + shipping_fee
+        order_total = int(cache_data.get("amount", 0))
+        used_point_value = max(0, int(used_point))
+        amount_after_point = max(0, order_total - used_point_value)
+        shipping_fee = TossPaymentService.calculate_shipping_fee(order_total)
+        final_amount = amount_after_point + shipping_fee
 
         success_url = f"{base_url}/payments/toss/success/?preOrderKey={pre_order_key}"
         fail_url = f"{base_url}/payments/toss/fail/?preOrderKey={pre_order_key}"
@@ -117,9 +120,11 @@ class TossPaymentService:
 
     @staticmethod
     def validate_payment_amount(cache_data: Dict[str, Any], amount: int) -> Tuple[bool, str]:
-        expected_amount = int(cache_data.get("amount", 0))
-        shipping_fee = TossPaymentService.calculate_shipping_fee(expected_amount)
-        expected_final_amount = expected_amount + shipping_fee
+        order_total = int(cache_data.get("amount", 0))
+        used_point = int(cache_data.get("used_point", 0)) or 0
+        amount_after_point = max(0, order_total - used_point)
+        shipping_fee = TossPaymentService.calculate_shipping_fee(order_total)
+        expected_final_amount = amount_after_point + shipping_fee
 
         if expected_final_amount != amount:
             return False, "결제 금액이 주문 정보와 일치하지 않습니다."

@@ -34,11 +34,20 @@ class TossPaymentRequestView(LoginRequiredMixin, View):
         if cache_data.get("user_id") != request.user.id:
             return JsonResponse({"error": "권한이 없습니다."}, status=403)
 
+        used_point = max(0, int(data.get("usedPoint", 0) or 0))
+        order_total = int(cache_data.get("amount", 0))
+        if used_point > order_total:
+            return JsonResponse({"error": "사용 포인트가 주문 금액을 초과할 수 없습니다."}, status=400)
+
+        cache_data["used_point"] = used_point
+        CacheHelper.set(pre_order_key, cache_data, timeout=60 * 15)
+
         base_url = settings.HOST_URL if not settings.DEBUG else request.build_absolute_uri("/")[:-1]
         _, _, _, response_data = TossPaymentService.prepare_payment_request(
             pre_order_key=pre_order_key,
             cache_data=cache_data,
-            base_url=base_url
+            base_url=base_url,
+            used_point=used_point,
         )
 
         return JsonResponse(response_data, status=200)
