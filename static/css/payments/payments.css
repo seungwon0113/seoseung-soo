@@ -649,6 +649,98 @@ body {
     background: #e9ecef;
 }
 
+.point-section {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.point-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.point-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.point-balance {
+    font-size: 14px;
+    color: #666;
+}
+
+.point-balance strong {
+    color: #1b1b1b;
+    font-weight: 600;
+}
+
+.point-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.point-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #e0e0e0;
+    font-size: 14px;
+    text-align: right;
+}
+
+.point-input:focus {
+    outline: none;
+    border-color: #1b1b1b;
+}
+
+.point-input::-webkit-outer-spin-button,
+.point-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.point-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.point-unit {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    min-width: 20px;
+}
+
+.point-use-all-btn {
+    padding: 12px 16px;
+    background: #1b1b1b;
+    border: none;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    white-space: nowrap;
+}
+
+.point-use-all-btn:hover {
+    background: #333;
+}
+
+.point-notice {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #999;
+}
+
+.point-discount-row .point-discount-value {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
 .payment-method-options {
     display: flex;
     gap: 16px;
@@ -1123,6 +1215,39 @@ body {
 
     .virtual-result-title {
         font-size: 18px;
+    }
+
+    /* 포인트 섹션 모바일 */
+    .point-section {
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+    }
+
+    .point-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        margin-bottom: 10px;
+    }
+
+    .point-input-group {
+        flex-wrap: wrap;
+    }
+
+    .point-input {
+        flex: 1;
+        min-width: 100px;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .point-use-all-btn {
+        padding: 10px 14px;
+        font-size: 12px;
+    }
+
+    .point-notice {
+        font-size: 11px;
     }
     
     .delivery-info-container {

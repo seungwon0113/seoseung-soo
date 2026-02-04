@@ -37,6 +37,7 @@ class Payment(models.Model):
             ("TRANSFER", "계좌이체"),
             ("VBANK", "가상계좌"),
             ("VIRTUAL_ACCOUNT", "무통장입금"),
+            ("POINT", "포인트"),
         ],
     )
 
