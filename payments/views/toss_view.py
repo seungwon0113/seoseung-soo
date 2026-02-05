@@ -11,6 +11,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 from config.utils.cache_helper import CacheHelper
+from membership.models import UserPoint
 from payments.services.toss_payment_service import TossPaymentService
 
 
@@ -35,6 +36,11 @@ class TossPaymentRequestView(LoginRequiredMixin, View):
             return JsonResponse({"error": "권한이 없습니다."}, status=403)
 
         used_point = max(0, int(data.get("usedPoint", 0) or 0))
+        if used_point > 0:
+            user_balance = UserPoint.get_user_balance(request.user)
+            if user_balance < used_point:
+                return JsonResponse({"error": "보유 포인트가 부족합니다."}, status=400)
+
         order_total = int(cache_data.get("amount", 0))
         if used_point > order_total:
             return JsonResponse({"error": "사용 포인트가 주문 금액을 초과할 수 없습니다."}, status=400)
