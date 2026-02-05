@@ -504,12 +504,12 @@ function formatNumber(num) {
 }
 
 window.addEventListener('beforeunload', function(e) {
-    const hasData = Array.from(document.querySelectorAll('input, select, textarea'))
-        .some(field => field.value.trim() !== '');
+    const paymentButton = document.getElementById('tossPaymentBtn');
+    const isPaymentInProgress = paymentButton && paymentButton.disabled;
     
-    if (hasData) {
+    if (isPaymentInProgress) {
         e.preventDefault();
-        e.returnValue = '입력한 정보가 사라집니다. 정말 나가시겠습니까?';
+        e.returnValue = '';
     }
 });
 
