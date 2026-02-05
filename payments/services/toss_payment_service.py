@@ -48,17 +48,24 @@ class TossPaymentService:
         return 0 if amount >= 50000 else 3000
 
     @staticmethod
+    def _calculate_final_amount(order_total: int, used_point: int = 0) -> int:
+        used_point_value = max(0, int(used_point))
+        amount_after_point = max(0, order_total - used_point_value)
+        shipping_fee = TossPaymentService.calculate_shipping_fee(order_total)
+        return amount_after_point + shipping_fee
+
+    @staticmethod
     def prepare_payment_request(
         pre_order_key: str,
         cache_data: Dict[str, Any],
-        base_url: str
+        base_url: str,
+        used_point: int = 0,
     ) -> Tuple[str, str, int, Dict[str, Any]]:
         order_id = TossPaymentService.generate_order_id()
         items_data = cache_data.get("items", [])
         order_name = TossPaymentService.generate_order_name(items_data)
-        amount = cache_data.get("amount", 0)
-        shipping_fee = TossPaymentService.calculate_shipping_fee(amount)
-        final_amount = amount + shipping_fee
+        order_total = int(cache_data.get("amount", 0))
+        final_amount = TossPaymentService._calculate_final_amount(order_total, used_point)
 
         success_url = f"{base_url}/payments/toss/success/?preOrderKey={pre_order_key}"
         fail_url = f"{base_url}/payments/toss/fail/?preOrderKey={pre_order_key}"
@@ -117,9 +124,9 @@ class TossPaymentService:
 
     @staticmethod
     def validate_payment_amount(cache_data: Dict[str, Any], amount: int) -> Tuple[bool, str]:
-        expected_amount = int(cache_data.get("amount", 0))
-        shipping_fee = TossPaymentService.calculate_shipping_fee(expected_amount)
-        expected_final_amount = expected_amount + shipping_fee
+        order_total = int(cache_data.get("amount", 0))
+        used_point = int(cache_data.get("used_point", 0)) or 0
+        expected_final_amount = TossPaymentService._calculate_final_amount(order_total, used_point)
 
         if expected_final_amount != amount:
             return False, "결제 금액이 주문 정보와 일치하지 않습니다."
@@ -132,14 +139,17 @@ class TossPaymentService:
         items_data: List[Dict[str, Any]],
         amount: int,
         payment_key: str,
-        payment_data: Dict[str, Any],
-        request_url: str,
-        request_payload: Dict[str, Any],
-        response_status_code: int,
         used_point: int = 0,
+        payment_method: str = "CARD",
+        payment_data: Dict[str, Any] | None = None,
+        request_url: str | None = None,
+        request_payload: Dict[str, Any] | None = None,
+        response_status_code: int | None = None,
     ) -> None:
+
         user = get_user_model().objects.get(id=user_id)
         order_name = TossPaymentService.generate_order_name(items_data)
+        payment_data = payment_data or {}
 
         metadata_used_point = 0
         metadata = payment_data.get("metadata")
@@ -185,26 +195,27 @@ class TossPaymentService:
             payment = Payment.objects.create(
                 order=order,
                 provider="toss",
-                method=payment_data.get("method", "CARD"),
+                method=payment_data.get("method", payment_method),
                 payment_key=str(payment_key),
                 amount=amount,
                 receipt_url=payment_data.get("receipt", {}).get("url", ""),
                 status="REQUESTED",
                 used_point=used_point_value,
-                raw_response=payment_data,
+                raw_response=payment_data if payment_data else {"point_only": True},
             )
 
             payment.approve()
 
-            PaymentLog.objects.create(
-                provider="toss",
-                event_type="CONFIRM",
-                request_url=request_url,
-                request_payload=request_payload,
-                response_payload=payment_data,
-                status_code=response_status_code,
-                payment=payment,
-            )
+            if request_url and request_payload is not None and response_status_code is not None:
+                PaymentLog.objects.create(
+                    provider="toss",
+                    event_type="CONFIRM",
+                    request_url=request_url,
+                    request_payload=request_payload,
+                    response_payload=payment_data,
+                    status_code=response_status_code,
+                    payment=payment,
+                )
 
             TossPaymentService.clear_cart_after_payment(user_id, items_data)
 

@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.selectedPaymentMethod = 'card';
 
+window.usedPoints = 0;
+
 function initializePaymentPage() {
     setupPaymentMethodSelection();
     setupCouponApplication();
@@ -12,6 +14,7 @@ function initializePaymentPage() {
     setupDiscountSelection();
     setupDropdownCloseOnOutsideClick();
     setupTossPayment();
+    setupPointUsage();
 }
 
 function setupPaymentMethodSelection() {
@@ -234,6 +237,79 @@ function setupDiscountSelection() {
     }
 }
 
+function setupPointUsage() {
+    const pointInput = document.getElementById('pointInput');
+    const useAllPointsBtn = document.getElementById('useAllPointsBtn');
+    
+    if (!pointInput) return;
+
+    const maxPoint = parseInt(pointInput.getAttribute('data-max-point')) || 0;
+    const originalFinalAmount = parseInt(pointInput.getAttribute('data-final-amount')) || 0;
+
+    pointInput.addEventListener('input', function() {
+        let value = parseInt(this.value) || 0;
+        
+        if (value < 0) value = 0;
+        
+        if (value > maxPoint) value = maxPoint;
+        
+        if (value > originalFinalAmount) value = originalFinalAmount;
+        
+        this.value = value;
+        window.usedPoints = value;
+        
+        updatePaymentAmount();
+    });
+
+    if (useAllPointsBtn) {
+        useAllPointsBtn.addEventListener('click', function() {
+            const useAmount = Math.min(maxPoint, originalFinalAmount);
+            pointInput.value = useAmount;
+            window.usedPoints = useAmount;
+            
+            updatePaymentAmount();
+        });
+    }
+}
+
+function updatePaymentAmount() {
+    const pointInput = document.getElementById('pointInput');
+    const paymentButton = document.getElementById('tossPaymentBtn');
+    const finalAmountDisplay = document.getElementById('finalAmountDisplay');
+    const pointDiscountRow = document.querySelector('.point-discount-row');
+    const pointDiscountValue = document.querySelector('.point-discount-value');
+    
+    if (!pointInput || !paymentButton) return;
+
+    const originalFinalAmount = parseInt(pointInput.getAttribute('data-final-amount')) || 0;
+    const usedPoints = window.usedPoints || 0;
+    const newFinalAmount = originalFinalAmount - usedPoints;
+
+    paymentButton.setAttribute('data-amount', newFinalAmount);
+    const paymentText = paymentButton.querySelector('.payment-text');
+    if (paymentText) {
+        const formattedAmount = newFinalAmount.toLocaleString();
+        if (window.selectedPaymentMethod === 'virtual') {
+            paymentText.textContent = `${formattedAmount}원 가상계좌 발급`;
+        } else {
+            paymentText.textContent = `${formattedAmount}원 결제하기`;
+        }
+    }
+
+    if (finalAmountDisplay) {
+        finalAmountDisplay.textContent = newFinalAmount.toLocaleString() + '원';
+    }
+
+    if (pointDiscountRow && pointDiscountValue) {
+        if (usedPoints > 0) {
+            pointDiscountRow.style.display = 'flex';
+            pointDiscountValue.textContent = `-${usedPoints.toLocaleString()}원`;
+        } else {
+            pointDiscountRow.style.display = 'none';
+        }
+    }
+}
+
 function validateField(field) {
     const value = field.value.trim();
     let isValid = true;
@@ -282,6 +358,11 @@ function removeErrorMessage(field) {
 
 function calculateTotalAmount() {
     const paymentButton = document.getElementById('tossPaymentBtn');
+    const pointInput = document.getElementById('pointInput');
+    const finalAmountDisplay = document.getElementById('finalAmountDisplay');
+    const pointDiscountRow = document.querySelector('.point-discount-row');
+    const pointDiscountValue = document.querySelector('.point-discount-value');
+    
     if (!paymentButton) {
         return;
     }
@@ -293,13 +374,37 @@ function calculateTotalAmount() {
     }
     
     const discountAmount = getCurrentDiscountAmount();
-    const finalAmount = originalAmount - discountAmount;
+    const usedPoints = window.usedPoints || 0;
+    const finalAmount = originalAmount - discountAmount - usedPoints;
     
     const paymentText = paymentButton.querySelector('.payment-text');
     
     if (paymentText) {
-        paymentText.textContent = `${finalAmount.toLocaleString()}원 결제하기`;
+        const formattedAmount = finalAmount.toLocaleString();
+        if (window.selectedPaymentMethod === 'virtual') {
+            paymentText.textContent = `${formattedAmount}원 가상계좌 발급`;
+        } else {
+            paymentText.textContent = `${formattedAmount}원 결제하기`;
+        }
         paymentButton.setAttribute('data-amount', finalAmount);
+    }
+
+    if (finalAmountDisplay) {
+        finalAmountDisplay.textContent = finalAmount.toLocaleString() + '원';
+    }
+
+    if (pointDiscountRow && pointDiscountValue) {
+        if (usedPoints > 0) {
+            pointDiscountRow.style.display = 'flex';
+            pointDiscountValue.textContent = `-${usedPoints.toLocaleString()}원`;
+        } else {
+            pointDiscountRow.style.display = 'none';
+        }
+    }
+
+    if (pointInput) {
+        const newMaxUsable = originalAmount - discountAmount;
+        pointInput.setAttribute('data-final-amount', newMaxUsable);
     }
 }
 
@@ -508,6 +613,12 @@ function setupTossPayment() {
             alert(validation.message);
             return;
         }
+
+        const usedPoints = window.usedPoints || 0;
+        if (usedPoints > 0 && usedPoints < 1000) {
+            alert('포인트는 최소 1,000P 이상부터 사용 가능합니다.');
+            return;
+        }
         
         const preOrderKey = tossPaymentBtn.getAttribute('data-pre-order-key');
         const amount = parseInt(tossPaymentBtn.getAttribute('data-amount')) || 0;
@@ -518,7 +629,11 @@ function setupTossPayment() {
         }
         
         if (amount <= 0) {
-            alert('결제 금액이 올바르지 않습니다.');
+            if (usedPoints < 1000) {
+                alert('포인트는 최소 1,000P 이상부터 사용 가능합니다.');
+                return;
+            }
+            requestPointOnlyPayment(preOrderKey, usedPoints);
             return;
         }
         
@@ -544,7 +659,8 @@ function requestTossPayment(preOrderKey, amount) {
             'X-CSRFToken': getCsrfToken()
         },
         body: JSON.stringify({
-            preOrderKey: preOrderKey
+            preOrderKey: preOrderKey,
+            usedPoint: window.usedPoints || 0
         })
     })
     .then(response => response.json())
@@ -581,6 +697,41 @@ function getCsrfToken() {
     }
     
     return '';
+}
+
+function requestPointOnlyPayment(preOrderKey, usedPoints) {
+    const paymentButton = document.getElementById('tossPaymentBtn');
+    const originalText = paymentButton.innerHTML;
+    
+    paymentButton.innerHTML = '<span class="payment-text">포인트 결제 처리 중...</span>';
+    paymentButton.disabled = true;
+    
+    fetch('/payments/point-only/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            preOrderKey: preOrderKey,
+            usedPoint: usedPoints
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirectUrl || '/orders/status/';
+        } else {
+            alert(data.error || '포인트 결제에 실패했습니다.');
+            paymentButton.innerHTML = originalText;
+            paymentButton.disabled = false;
+        }
+    })
+    .catch(error => {
+        alert('포인트 결제 요청 중 오류가 발생했습니다.');
+        paymentButton.innerHTML = originalText;
+        paymentButton.disabled = false;
+    });
 }
 
 function requestVirtualAccountPayment(preOrderKey, amount) {

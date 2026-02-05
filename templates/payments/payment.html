@@ -152,7 +152,22 @@
     <div class="discount-info-container">
         <div class="form-section">
             <div class="discount-section">
-                <h4 class="discount-title">할인/부가결제</h4>
+                <h4 class="discount-title">포인트/쿠폰</h4>
+                
+                <div class="point-section">
+                    <div class="point-header">
+                        <span class="point-label">포인트 사용</span>
+                        <span class="point-balance">보유 <strong id="availablePoints">{{ point_balance|intcomma }}</strong>P</span>
+                    </div>
+                    <div class="point-input-group">
+                        <input type="number" id="pointInput" class="point-input" placeholder="0" min="0" max="{{ point_balance }}" value="0"
+                               data-max-point="{{ point_balance }}" data-final-amount="{{ final_amount }}">
+                        <span class="point-unit">P</span>
+                        <button type="button" class="point-use-all-btn" id="useAllPointsBtn">전액사용</button>
+                    </div>
+                    <p class="point-notice">* 최소 1,000P 이상부터 사용 가능하며, 전액 포인트 결제가 가능합니다.</p>
+                </div>
+
                 <div class="discount-item">
                     <span class="discount-label">자동 할인</span>
                     <select class="discount-select">
@@ -191,9 +206,13 @@
                                 {% endif %}
                             </span>
                         </div>
+                        <div class="summary-row point-discount-row" style="display: none;">
+                            <span class="label">포인트 사용:</span>
+                            <span class="value point-discount-value">-0원</span>
+                        </div>
                         <div class="summary-row total">
                             <span class="label">총 결제 금액:</span>
-                            <span class="value">{{ final_amount|intcomma }}원</span>
+                            <span class="value" id="finalAmountDisplay">{{ final_amount|intcomma }}원</span>
                         </div>
                     </div>
                 {% else %}

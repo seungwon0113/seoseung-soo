@@ -7,6 +7,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views import View
 
+from membership.models import UserPoint
 from payments.models import BankChoices
 from payments.services.payment_service import PaymentService
 from users.models import User
@@ -25,6 +26,7 @@ class PaymentView(LoginRequiredMixin, View):
         )
 
         context['bank_choices'] = BankChoices.choices
+        context['point_balance'] = UserPoint.get_user_balance(user)
 
         return render(request, 'payments/payment.html', context)
 
