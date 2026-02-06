@@ -236,6 +236,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let sliderCurrentIndex = 0;
     let slideInterval = null;
     
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+    let isSwiping = false;
+    const SWIPE_THRESHOLD = 50;
+    
     let nextReviewTimeout;
     function showNextReview() {
         if (!window.reviewData || window.reviewData.length === 0) return;
@@ -360,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (images[currentImageIndex]) {
                         images[currentImageIndex].classList.add('active');
                     }
-                }, 3000);
+                }, 1000);
             }
         } 
         else if (review.productImages && review.productImages.length > 0) {
@@ -395,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (images[currentImageIndex]) {
                     images[currentImageIndex].classList.add('active');
                 }
-            }, 3000);
+            }, 1000);
         }
         else {
             modalImages.classList.add('no-image');
@@ -468,6 +475,52 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             showNextReview();
         });
+    }
+    
+    if (reviewModal) {
+        const modalContent = reviewModal.querySelector('.modal-container') || reviewModal;
+        
+        modalContent.addEventListener('touchstart', function(e) {
+            if (!reviewModal.classList.contains('active')) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            isSwiping = true;
+        }, { passive: true });
+        
+        modalContent.addEventListener('touchmove', function(e) {
+            if (!isSwiping || !reviewModal.classList.contains('active')) return;
+            touchEndX = e.touches[0].clientX;
+            touchEndY = e.touches[0].clientY;
+            
+            const diffX = touchEndX - touchStartX;
+            const diffY = Math.abs(touchEndY - touchStartY);
+            
+            if (Math.abs(diffX) > diffY && Math.abs(diffX) > 10) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        modalContent.addEventListener('touchend', function(e) {
+            if (!isSwiping || !reviewModal.classList.contains('active')) return;
+            
+            const diffX = touchEndX - touchStartX;
+            const diffY = Math.abs(touchEndY - touchStartY);
+            
+            if (Math.abs(diffX) > diffY && Math.abs(diffX) > SWIPE_THRESHOLD) {
+                if (diffX > 0) {
+                    showPrevReview();
+                } else {
+                    showNextReview();
+                }
+            }
+            
+            // 리셋
+            touchStartX = 0;
+            touchStartY = 0;
+            touchEndX = 0;
+            touchEndY = 0;
+            isSwiping = false;
+        }, { passive: true });
     }
     
     document.addEventListener('keydown', function(e) {

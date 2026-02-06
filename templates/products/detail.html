@@ -147,9 +147,7 @@
     <div class="product-description-or-review-container">
         <div class="product-description-or-review-toggle">
             <button class="tab-button active" data-tab="description">상품 상세내용</button>
-            {% if reviews.count > 0 %}
-            <button class="tab-button" data-tab="review">리뷰</button>
-            {% endif %}
+            <button class="tab-button" data-tab="review">리뷰 ({{ review_count|default:0 }})</button>
         </div>
         
         <div class="tab-content">
@@ -413,6 +411,53 @@
 <button class="mobile-fab-btn" id="mobileFabBtn">
     <span>구매하기</span>
 </button>
+
+<div class="review-write-modal" id="reviewWriteModal">
+    <div class="review-write-modal-overlay" onclick="closeReviewModal()"></div>
+    <div class="review-write-modal-content">
+        <div class="review-write-modal-header">
+            <h3>리뷰 작성</h3>
+            <button type="button" class="review-write-modal-close" onclick="closeReviewModal()">×</button>
+        </div>
+        <form method="post" action="{% url 'review-create' product_id=products.id %}" enctype="multipart/form-data" class="review-write-form">
+            {% csrf_token %}
+            <div class="review-write-product-info">
+                <div class="review-write-product-image">
+                    {% if products.image.first %}
+                    <img src="{{ products.image.first.image.url }}" alt="{{ products.name }}">
+                    {% endif %}
+                </div>
+                <div class="review-write-product-name">{{ products.name }}</div>
+            </div>
+            
+            <div class="review-write-rating">
+                <label class="review-write-label">평점</label>
+                <div class="review-write-stars">
+                    {% for i in "54321" %}
+                    <input type="radio" name="rating" value="{{ i }}" id="rating{{ i }}" {% if i == "5" %}checked{% endif %}>
+                    <label for="rating{{ i }}" class="review-star-label">★</label>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="review-write-content">
+                <label class="review-write-label">리뷰 내용</label>
+                <textarea name="content" placeholder="상품에 대한 솔직한 리뷰를 작성해주세요 (최소 10자 이상)" rows="5" minlength="10" maxlength="1000" required></textarea>
+            </div>
+            
+            <div class="review-write-images">
+                <label class="review-write-label">사진 첨부 (선택)</label>
+                <input type="file" name="image" accept="image/*" multiple>
+                <p class="review-write-hint">최대 5장까지 첨부 가능합니다</p>
+            </div>
+            
+            <div class="review-write-actions">
+                <button type="button" class="review-write-cancel" onclick="closeReviewModal()">취소</button>
+                <button type="submit" class="review-write-submit">리뷰 등록</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
