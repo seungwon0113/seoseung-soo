@@ -91,8 +91,10 @@ a img {
   align-items: center;
   justify-content: space-between;
   height: 90px;
-  padding-top: 10px;
+  padding: 10px 60px 0 40px;
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .logo {
@@ -203,31 +205,89 @@ body.menu-open .site-header {
   color: var(--text);
 }
 
-.top-nav a { margin-left: 16px; font-size: 12px; text-decoration: none; color: var(--muted); }
+.top-nav { 
+  display: flex; 
+  flex-direction: row;
+  align-items: center; 
+  flex-wrap: nowrap;
+  gap: 0;
+}
+.top-nav a { margin-left: 24px; font-size: 12px; text-decoration: none; color: var(--muted); white-space: nowrap; }
 .top-nav a:hover { color: var(--text); }
 
-.main-nav {
-  border-top: 1px solid rgba(233, 233, 233, 0.05);
-  border-bottom: solid #1b1b1b 0.5px;
-  display: flex;
+.search-toggle-wrapper {
+  display: inline-flex;
+  position: relative;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 10px 10px 30px;
 }
-.category-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-}
-.category-nav a {
+
+.search-toggle-btn {
+  margin-left: 24px;
+  font-size: 12px;
   text-decoration: none;
   color: var(--muted);
-  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
-.category-nav a:hover {
+
+.search-toggle-btn:hover {
   color: var(--text);
 }
 
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+  z-index: 100;
+}
+
+.search-dropdown.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.search-dropdown-form {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #1b1b1b;
+  gap: 8px;
+}
+
+.search-dropdown-input {
+  width: 240px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 0;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.search-dropdown-input:focus {
+  border-bottom-color: #1b1b1b;
+}
+
+.search-dropdown-btn {
+  background: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1b1b1b;
+  transition: background 0.2s ease;
+}
 
 .mobile-menu {
   position: fixed;
@@ -396,10 +456,10 @@ body.menu-open .site-header {
 }
 
 @media (max-width: 768px) {
-  .main-nav {
-    display: none;
+  .header-bar {
+    padding: 10px 16px 0 0px;
   }
-
+  
   .top-nav {
     display: none;
   }

@@ -78,6 +78,36 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  const searchToggle = document.getElementById('searchToggle');
+  const searchDropdown = document.getElementById('searchDropdown');
+  
+  if (searchToggle && searchDropdown) {
+    searchToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      searchDropdown.classList.toggle('active');
+      
+      if (searchDropdown.classList.contains('active')) {
+        const input = searchDropdown.querySelector('.search-dropdown-input');
+        if (input) {
+          setTimeout(() => input.focus(), 100);
+        }
+      }
+    });
+    
+    document.addEventListener('click', (e) => {
+      if (!searchDropdown.contains(e.target) && !searchToggle.contains(e.target)) {
+        searchDropdown.classList.remove('active');
+      }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && searchDropdown.classList.contains('active')) {
+        searchDropdown.classList.remove('active');
+      }
+    });
+  }
   
   const mainCategoryLinks = document.querySelectorAll('.mobile-main-category a');
   const subCategories = document.querySelector('.mobile-sub-categories');
