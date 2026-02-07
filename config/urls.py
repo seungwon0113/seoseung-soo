@@ -11,8 +11,14 @@ from users import urls as users_urls
 
 def home(request: HttpRequest) -> HttpResponse:
     from products.models import Product
+    from config.models import SiteSetting
+
     products = Product.objects.filter(is_live=True, is_sold=False).prefetch_related('colors', 'image').order_by('-created_at')
-    context = {'products': products}
+    site_settings = SiteSetting.get_settings()
+    context = {
+        'products': products,
+        'site_settings': site_settings,
+    }
     return render(request, 'home.html', context)
 
 urlpatterns = [
