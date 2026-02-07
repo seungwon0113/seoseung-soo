@@ -662,3 +662,50 @@ function handleImmediatePurchase(isMobileDrawer) {
             }
         });
 }
+
+function handleReviewWrite() {
+    const buyNowButton = document.getElementById('buyNowButton');
+    const productId = buyNowButton ? buyNowButton.dataset.productId : null;
+    const isAuthenticated = buyNowButton ? buyNowButton.dataset.isAuthenticated === 'true' : false;
+    const loginUrl = buyNowButton ? buyNowButton.dataset.loginUrl : '/users/login/';
+    
+    if (!productId) {
+        alert('상품 정보를 찾을 수 없습니다.');
+        return;
+    }
+    
+    if (!isAuthenticated) {
+        const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `${loginUrl}?next=${currentUrl}`;
+        return;
+    }
+    
+    openReviewModal(productId);
+}
+
+function openReviewModal(productId) {
+    const modal = document.getElementById('reviewWriteModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        const form = modal.querySelector('form');
+        if (form) {
+            form.action = `/reviews/create/${productId}/`;
+        }
+    }
+}
+
+function closeReviewModal() {
+    const modal = document.getElementById('reviewWriteModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const reviewWriteBtns = document.querySelectorAll('.review-write-btn');
+    reviewWriteBtns.forEach(btn => {
+        btn.addEventListener('click', handleReviewWrite);
+    });
+});
