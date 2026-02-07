@@ -4,9 +4,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const cookieAccept = document.getElementById('cookieAccept');
   const cookieDecline = document.getElementById('cookieDecline');
 
-  // if (!localStorage.getItem('cookieConsent')) {
+  if (!localStorage.getItem('cookieConsent')) {
     cookieBanner.classList.add('active');
-  // }
+  }
 
   if (cookieAccept) {
     cookieAccept.addEventListener('click', function() {
