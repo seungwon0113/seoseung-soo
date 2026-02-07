@@ -20,10 +20,8 @@ class SiteSettingView(AdminPermission, View):
         hero_title = request.POST.get('hero_title', '').strip()
         hero_subtitle = request.POST.get('hero_subtitle', '').strip()
 
-        if hero_title:
-            setting.hero_title = hero_title
-        if hero_subtitle:
-            setting.hero_subtitle = hero_subtitle
+        setting.hero_title = hero_title
+        setting.hero_subtitle = hero_subtitle
 
         hero_image = request.FILES.get('hero_image')
         if hero_image:
