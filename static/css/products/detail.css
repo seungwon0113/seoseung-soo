@@ -778,11 +778,15 @@
 
 .drawer-options-row {
     display: flex;
-    gap: 48px;
+    gap: 24px;
     margin-bottom: 24px;
+    align-items: flex-start;
 }
 
-.drawer-size-section,
+.drawer-size-section {
+    flex: 1.5;
+}
+
 .drawer-quantity-section {
     flex: 1;
 }
@@ -797,15 +801,17 @@
 
 .drawer-size-options {
   display: flex;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .drawer-size-btn {
-  flex: 1;
-  height: 44px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #6b7280;
   cursor: pointer;
@@ -826,19 +832,19 @@
 .drawer-quantity-controls {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   background: white;
   padding: 4px;
   border: 1px solid #d1d5db;
-  width: 80%;
+  width: 100%;
 }
 
 .drawer-quantity-btn {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border: none;
   background: white;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 500;
   color: #1b1b1b;
   cursor: pointer;

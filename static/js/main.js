@@ -9,33 +9,37 @@ document.addEventListener('DOMContentLoaded', () => {
   siteHeader = document.querySelector('.site-header');
   
   let hoverTimeout;
-  let isScrolling = false;
   
   function openMenu() {
     mobileMenu.classList.add('is-open');
     mobileMenuOverlay.classList.add('is-open');
     menuToggle.classList.add('active');
+    document.body.style.overflow = 'hidden';
     document.body.classList.add('menu-open');
+    
+    mobileMenu.focus();
   }
   
   function closeMenu() {
     mobileMenu.classList.remove('is-open');
     mobileMenuOverlay.classList.remove('is-open');
     menuToggle.classList.remove('active');
+    document.body.style.overflow = '';
     
-    setTimeout(() => {
-      document.body.classList.remove('menu-open');
-    }, 400);
+    mobileMenu.addEventListener('transitionend', function handler() {
+      if (!mobileMenu.classList.contains('is-open')) {
+        document.body.classList.remove('menu-open');
+      }
+      mobileMenu.removeEventListener('transitionend', handler);
+    });
+    
+    menuToggle.focus();
   }
   
   if (menuToggle && mobileMenu && mobileMenuOverlay) {
     menuToggle.addEventListener('click', () => {
       const isOpen = mobileMenu.classList.contains('is-open');
-      if (isOpen) {
-        closeMenu();
-      } else {
-        openMenu();
-      }
+      isOpen ? closeMenu() : openMenu();
     });
     
     menuToggle.addEventListener('mouseenter', () => {
@@ -48,17 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuContainer = document.querySelector('.site-header');
     menuContainer.addEventListener('mouseleave', () => {
       if (window.innerWidth > 768) {
-        hoverTimeout = setTimeout(() => {
-          closeMenu();
-        }, 300);
+        hoverTimeout = setTimeout(closeMenu, 300);
       }
     });
     
     mobileMenu.addEventListener('mouseleave', () => {
       if (window.innerWidth > 768) {
-        hoverTimeout = setTimeout(() => {
-          closeMenu();
-        }, 100);
+        hoverTimeout = setTimeout(closeMenu, 100);
       }
     });
     
@@ -72,8 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     mobileMenuOverlay.addEventListener('click', closeMenu);
     
-    document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 768 && !menuToggle.contains(e.target) && !mobileMenu.contains(e.target)) {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && mobileMenu.classList.contains('is-open')) {
         closeMenu();
       }
     });

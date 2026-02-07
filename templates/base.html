@@ -82,54 +82,55 @@
         
         <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
         
-        <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu" id="mobileMenu" tabindex="-1" aria-labelledby="offcanvasMenuLabel" role="dialog" aria-modal="true">
             <div class="mobile-menu-header">
-                <h3>MENU</h3>
+                <h3 id="offcanvasMenuLabel">MENU</h3>
                 <button class="mobile-menu-close" id="mobileMenuClose" aria-label="메뉴 닫기">×</button>
             </div>
-            <nav class="mobile-main-category">
-                {% for main_category in main_categories %}
-                    <a href="{% url 'customer-product-list' %}?category={{ main_category.name }}" data-category="category-{{ main_category.id }}">{{ main_category.name|upper }}</a>
-                {% endfor %}
-            </nav>
-            
-            <div class="mobile-sub-categories">
-                {% for main_category in main_categories %}
-                <div class="sub-category-section" data-parent="category-{{ main_category.id }}">
-                    <nav class="sub-category-nav">
-                        {% for sub_category in main_category.children.all %}
-                        <a href="{% url 'customer-product-list' %}?category={{ sub_category.name }}" data-category="category-{{ sub_category.id }}">{{ sub_category.name }}</a>
-                        {% empty %}
-                        <a class="no-subcategory">소분류가 없습니다</a>
-                        {% endfor %}
-                    </nav>
+            <div class="mobile-menu-body">
+                <nav class="mobile-main-category">
+                    {% for main_category in main_categories %}
+                        <a href="{% url 'customer-product-list' %}?category={{ main_category.name }}" data-category="category-{{ main_category.id }}">{{ main_category.name|upper }}</a>
+                    {% endfor %}
+                </nav>
+                
+                <div class="mobile-sub-categories">
+                    {% for main_category in main_categories %}
+                    <div class="sub-category-section" data-parent="category-{{ main_category.id }}">
+                        <nav class="sub-category-nav">
+                            {% for sub_category in main_category.children.all %}
+                            <a href="{% url 'customer-product-list' %}?category={{ sub_category.name }}" data-category="category-{{ sub_category.id }}">{{ sub_category.name }}</a>
+                            {% empty %}
+                            <a class="no-subcategory">소분류가 없습니다</a>
+                            {% endfor %}
+                        </nav>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                
+                <div class="mobile-search-box">
+                    <form method="get" action="{% url 'customer-product-list' %}" class="search-form">
+                        <input type="text" name="search" placeholder="검색어를 입력하세요" class="mobile-search-input" value="{{ request.GET.search }}">
+                        <button type="submit" class="mobile-search-btn" aria-label="검색"></button>
+                    </form>
+                </div>
+                <nav class="mobile-user-nav">
+                    {% if user.is_authenticated and user.role == 'admin' %}
+                    <a href="{% url 'product-list' %}">ADMIN</a>
+                    {% endif %}
+                    {% if not user.is_authenticated %}
+                    <a href="{% url "login" %}">LOGIN</a>
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                    <a href={% url "logout" %}>LOGOUT</a>
+                    {% endif %}                
+                    {% if not user.is_authenticated %}
+                    <a href="{% url "login" %}">MYPAGE</a>
+                    {% elif user.is_authenticated %}
+                    <a href={% url "mypage" %}>MYPAGE</a>
+                    {% endif %}
+                </nav>
             </div>
-            
-           
-            <div class="mobile-search-box">
-                <form method="get" action="{% url 'customer-product-list' %}" class="search-form">
-                    <input type="text" name="search" placeholder="검색어를 입력하세요" class="mobile-search-input" value="{{ request.GET.search }}">
-                    <button type="submit" class="mobile-search-btn" aria-label="검색"></button>
-                </form>
-            </div>
-            <nav class="mobile-user-nav">
-                {% if user.is_authenticated and user.role == 'admin' %}
-                <a href="{% url 'product-list' %}">ADMIN</a>
-                {% endif %}
-                {% if not user.is_authenticated %}
-                <a href="{% url "login" %}">LOGIN</a>
-                {% endif %}
-                {% if user.is_authenticated %}
-                <a href={% url "logout" %}>LOGOUT</a>
-                {% endif %}                
-                {% if not user.is_authenticated %}
-                <a href="{% url "login" %}">MYPAGE</a>
-                {% elif user.is_authenticated %}
-                <a href={% url "mypage" %}>MYPAGE</a>
-                {% endif %}
-            </nav>
         </div>
     </header>
 
