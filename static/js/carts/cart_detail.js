@@ -164,7 +164,8 @@ function createOrderFromCartAPI() {
         const quantity = parseInt(item.querySelector('.quantity-input')?.value || 1);
         const productName = item.querySelector('.item-name')?.textContent?.trim() || '';
         const colorId = item.dataset.colorId ? parseInt(item.dataset.colorId) : null;
-        
+        const sizeId = item.dataset.sizeId ? parseInt(item.dataset.sizeId) : null;
+
         if (productId) {
             const itemData = {
                 product_id: productId,
@@ -173,6 +174,9 @@ function createOrderFromCartAPI() {
             };
             if (colorId) {
                 itemData.color_id = colorId;
+            }
+            if (sizeId) {
+                itemData.size_id = sizeId;
             }
             items.push(itemData);
         }

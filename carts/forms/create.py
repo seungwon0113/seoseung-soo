@@ -2,13 +2,14 @@ from typing import Any, cast
 
 from django import forms
 
-from products.models import Color, Product
+from products.models import Color, Product, Size
 
 
 class CartCreateForm(forms.Form):
     product_id = forms.IntegerField(widget=forms.HiddenInput())
     quantity = forms.IntegerField(min_value=1, initial=1)
     color_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
+    size_id = forms.IntegerField(required=False, widget=forms.HiddenInput())
     
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -33,7 +34,16 @@ class CartCreateForm(forms.Form):
             return Color.objects.get(id=color_id)
         except Color.DoesNotExist:
             raise forms.ValidationError('존재하지 않는 색상입니다.')
-    
+
+    def clean_size_id(self) -> Size | None:
+        size_id = self.cleaned_data.get('size_id')
+        if not size_id:
+            return None
+        try:
+            return Size.objects.get(id=size_id)
+        except Size.DoesNotExist:
+            raise forms.ValidationError('존재하지 않는 사이즈입니다.')
+
     def clean(self) -> dict[str, Any]:
         cleaned_data = cast(dict[str, Any], super().clean())
 

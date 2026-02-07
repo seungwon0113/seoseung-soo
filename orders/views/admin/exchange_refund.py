@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db.models import Count, Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
@@ -17,6 +18,24 @@ class AdminExchangeRefundListView(AdminPermission, View):
 
         orders_qs = Filtering.exchange_refund_list_filter(request)
 
+        base_qs = Order.objects.filter(
+            exchange_refund_request_status__in=[
+                Order.ExchangeRefundRequestStatus.PENDING,
+                Order.ExchangeRefundRequestStatus.APPROVED,
+                Order.ExchangeRefundRequestStatus.REJECTED,
+            ]
+        )
+        agg = base_qs.aggregate(
+            pending=Count("id", filter=Q(exchange_refund_request_status=Order.ExchangeRefundRequestStatus.PENDING)),
+            approved=Count("id", filter=Q(exchange_refund_request_status=Order.ExchangeRefundRequestStatus.APPROVED)),
+            rejected=Count("id", filter=Q(exchange_refund_request_status=Order.ExchangeRefundRequestStatus.REJECTED)),
+        )
+        exchange_refund_stats = {
+            "pending": agg["pending"],
+            "approved": agg["approved"],
+            "rejected": agg["rejected"],
+        }
+
         paginator = Paginator(orders_qs, 20)
         page_obj = paginator.get_page(request.GET.get("page") or "1")
 
@@ -25,6 +44,7 @@ class AdminExchangeRefundListView(AdminPermission, View):
             "status": status,
             "page_obj": page_obj,
             "orders": page_obj.object_list,
+            "exchange_refund_stats": exchange_refund_stats,
         }
         return render(request, "orders/admin/exchange_refund_list.html", context)
 

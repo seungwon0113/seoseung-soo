@@ -352,3 +352,37 @@
 .color-checkbox:checked + .color-swatch-circle .checkmark {
   opacity: 1;
 }
+
+.size-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.size-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.size-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.size-label {
+  padding: 8px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.size-checkbox:checked + .size-label {
+  border-color: #1b1b1b;
+  background: #f8f9fa;
+}

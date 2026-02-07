@@ -854,3 +854,373 @@ class TestAppleLoginView:
         assert res.status_code == 302
         assert res["Location"] == "/"
 
+
+@pytest.mark.django_db
+class TestSocialLoginServiceLowCoverageBranches:
+    def test_social_login_service_missing_social_id(self) -> None:
+        user, error = SocialLoginService.get_or_create_user(
+            provider="google",
+            social_id="",
+            email="test@example.com",
+        )
+        assert user is None
+        assert error == "소셜 ID 누락"
+
+    def test_social_login_service_integrity_error(self, monkeypatch: Any) -> None:
+        def mock_create(*args: Any, **kwargs: Any) -> None:
+            raise IntegrityError("duplicate")
+
+        monkeypatch.setattr(
+            SocialUser.objects, "create", mock_create, raising=False
+        )
+
+        user, error = SocialLoginService.get_or_create_user(
+            provider="google",
+            social_id="g123",
+            email="test@example.com",
+        )
+        assert user is None
+        assert error == "이미 연결된 소셜 계정입니다."
+
+    def test_social_login_service_generic_exception(self, monkeypatch: Any) -> None:
+        def mock_get_or_create(*args: Any, **kwargs: Any) -> Any:
+            raise RuntimeError("db connection failed")
+
+        monkeypatch.setattr(
+            User.objects, "get_or_create", mock_get_or_create, raising=False
+        )
+        user, error = SocialLoginService.get_or_create_user(
+            provider="google",
+            social_id="g999",
+            email="new@example.com",
+        )
+        assert user is None
+        assert "DB 오류" in str(error)
+
+
+@pytest.mark.django_db
+class TestGoogleLoginServiceUncoveredBranches:
+    def test_google_get_or_create_user_missing_sub_and_id(self) -> None:
+        user, error = GoogleLoginService.get_or_create_user({"email": "x@y.com"})
+        assert user is None
+        assert error == "Google 사용자 ID(sub)가 누락되었습니다."
+
+    def test_google_get_or_create_user_social_service_returns_error(self) -> None:
+        with patch(
+            "users.services.social_login.SocialLoginService.get_or_create_user",
+            return_value=(None, "이미 연결된 소셜 계정입니다."),
+        ):
+            user, error = GoogleLoginService.get_or_create_user(
+                {"sub": "g123", "email": "a@b.com", "name": "Test"}
+            )
+        assert user is None
+        assert error == "이미 연결된 소셜 계정입니다."
+
+
+@pytest.mark.django_db
+class TestKakaoLoginServiceUncoveredBranches:
+    @patch("users.services.social_login.requests.get")
+    def test_get_kakao_user_info_non_dict_response(
+        self, mock_get: MagicMock
+    ) -> None:
+        mock_res = MagicMock()
+        mock_res.status_code = 200
+        mock_res.json.return_value = ["not", "a", "dict"]
+        mock_get.return_value = mock_res
+        result = KakaoLoginService.get_kakao_user_info("token")
+        assert result is None
+
+    @patch("users.services.social_login.requests.get")
+    def test_get_kakao_user_info_non_200(self, mock_get: MagicMock) -> None:
+        mock_res = MagicMock()
+        mock_res.status_code = 401
+        mock_res.text = "Unauthorized"
+        mock_get.return_value = mock_res
+        result = KakaoLoginService.get_kakao_user_info("token")
+        assert result is None
+
+    @patch("users.services.social_login.requests.get")
+    def test_get_kakao_user_info_exception(self, mock_get: MagicMock) -> None:
+        mock_get.side_effect = Exception("network error")
+        result = KakaoLoginService.get_kakao_user_info("token")
+        assert result is None
+
+    def test_kakao_get_or_create_user_social_returns_error(self) -> None:
+        with patch(
+            "users.services.social_login.SocialLoginService.get_or_create_user",
+            return_value=(None, "DB 오류"),
+        ):
+            user, error = KakaoLoginService.get_or_create_user(
+                {"id": "k1", "kakao_account": {"email": "k@k.com", "profile": {}}}
+            )
+        assert user is None
+        assert error == "DB 오류"
+
+    @patch.object(KakaoLoginService, "get_kakao_user_info", return_value=None)
+    def test_kakao_authenticate_user_info_fail(
+        self, mock_info: MagicMock
+    ) -> None:
+        user, error = KakaoLoginService.authenticate_user("token")
+        assert user is None
+        assert error == "카카오 사용자 정보 조회에 실패했습니다."
+
+    @patch.object(KakaoLoginService, "get_or_create_user", return_value=(None, "err"))
+    @patch.object(KakaoLoginService, "get_kakao_user_info")
+    def test_kakao_authenticate_user_creation_fail(
+        self, mock_info: MagicMock, mock_create: MagicMock
+    ) -> None:
+        mock_info.return_value = {"id": "k1", "kakao_account": {}}
+        user, error = KakaoLoginService.authenticate_user("token")
+        assert user is None
+        assert error == "err"
+
+    @patch.object(KakaoLoginService, "get_or_create_user", return_value=(None, None))
+    @patch.object(KakaoLoginService, "get_kakao_user_info")
+    def test_kakao_authenticate_user_none_without_error(
+        self, mock_info: MagicMock, mock_create: MagicMock
+    ) -> None:
+        mock_info.return_value = {"id": "k1", "kakao_account": {}}
+        user, error = KakaoLoginService.authenticate_user("token")
+        assert user is None
+        assert error == "사용자 생성/조회에 실패했습니다."
+
+    @patch.object(KakaoLoginService, "get_kakao_user_info", side_effect=Exception("x"))
+    def test_kakao_authenticate_user_exception(
+        self, mock_info: MagicMock
+    ) -> None:
+        user, error = KakaoLoginService.authenticate_user("token")
+        assert user is None
+        assert error == "x"
+
+
+class TestNaverLoginServiceUncoveredBranches:
+    @patch("users.services.social_login.requests.get")
+    def test_naver_get_access_token_non_200(self, mock_get: MagicMock) -> None:
+        mock_res = MagicMock()
+        mock_res.status_code = 400
+        mock_get.return_value = mock_res
+        result = NaverLoginService.get_access_token("code", "state")
+        assert result is None
+
+    @patch("users.services.social_login.requests.get")
+    def test_naver_get_access_token_json_decode_error(
+        self, mock_get: MagicMock
+    ) -> None:
+        mock_res = MagicMock()
+        mock_res.status_code = 200
+        mock_res.json.side_effect = json.JSONDecodeError("x", "y", 0)
+        mock_get.return_value = mock_res
+        result = NaverLoginService.get_access_token("code", "state")
+        assert result is None
+
+    @patch("users.services.social_login.requests.get")
+    def test_naver_get_access_token_response_not_dict(
+        self, mock_get: MagicMock
+    ) -> None:
+        mock_res = MagicMock()
+        mock_res.status_code = 200
+        mock_res.json.return_value = []
+        mock_get.return_value = mock_res
+        result = NaverLoginService.get_access_token("code", "state")
+        assert result is None
+
+    @patch("users.services.social_login.requests.get")
+    def test_naver_get_access_token_no_access_token(
+        self, mock_get: MagicMock
+    ) -> None:
+        mock_res = MagicMock()
+        mock_res.status_code = 200
+        mock_res.json.return_value = {"other": "value"}
+        mock_get.return_value = mock_res
+        result = NaverLoginService.get_access_token("code", "state")
+        assert result is None
+
+    @patch("users.services.social_login.requests.get")
+    def test_naver_get_user_info_non_200(self, mock_get: MagicMock) -> None:
+        mock_res = MagicMock()
+        mock_res.status_code = 401
+        mock_get.return_value = mock_res
+        result = NaverLoginService.get_user_info("token")
+        assert result is None
+
+    @patch("users.services.social_login.requests.get")
+    def test_naver_get_user_info_result_code_not_00(
+        self, mock_get: MagicMock
+    ) -> None:
+        mock_res = MagicMock()
+        mock_res.status_code = 200
+        mock_res.json.return_value = {"resultcode": "01", "message": "err"}
+        mock_get.return_value = mock_res
+        result = NaverLoginService.get_user_info("token")
+        assert result is None
+
+
+@pytest.mark.django_db
+class TestNaverCreateOrGetUserUncoveredBranches:
+    def test_naver_create_or_get_user_empty_info(self) -> None:
+        user, error = NaverLoginService.create_or_get_user({})
+        assert user is None
+        assert error == "네이버 사용자 정보가 비어있습니다."
+
+    def test_naver_create_or_get_user_missing_naver_id(self) -> None:
+        user, error = NaverLoginService.create_or_get_user(
+            {"email": "n@n.com", "name": "X"}
+        )
+        assert user is None
+        assert error == "네이버 사용자 ID가 없습니다."
+
+    def test_naver_create_or_get_user_missing_email(self) -> None:
+        user, error = NaverLoginService.create_or_get_user(
+            {"id": "n1", "name": "X"}
+        )
+        assert user is None
+        assert error == "네이버 이메일 정보가 없습니다."
+
+
+class TestAppleLoginServiceUncoveredBranches:
+    @patch("users.services.social_login.os.getenv")
+    def test_apple_build_client_secret_missing_env(
+        self, mock_getenv: MagicMock
+    ) -> None:
+        mock_getenv.return_value = ""
+        with pytest.raises(ValueError, match="Apple OAuth 환경변수가 누락"):
+            AppleLoginService._build_client_secret()
+
+    @patch("users.services.social_login.os.getenv")
+    def test_apple_get_login_url_missing_env(
+        self, mock_getenv: MagicMock
+    ) -> None:
+        mock_getenv.return_value = ""
+        with pytest.raises(ValueError, match="APPLE_CLIENT_ID"):
+            AppleLoginService.get_login_url("state")
+
+    @patch("users.services.social_login.requests.post")
+    def test_apple_exchange_token_request_exception(
+        self, mock_post: MagicMock
+    ) -> None:
+        mock_post.side_effect = Exception("timeout")
+        with patch.object(
+            AppleLoginService, "_build_client_secret", return_value="secret"
+        ):
+            result = AppleLoginService.exchange_token("code")
+        assert result is None
+
+    @patch("users.services.social_login.requests.post")
+    def test_apple_exchange_token_non_200(self, mock_post: MagicMock) -> None:
+        mock_res = MagicMock()
+        mock_res.status_code = 400
+        mock_post.return_value = mock_res
+        with patch.object(
+            AppleLoginService, "_build_client_secret", return_value="secret"
+        ):
+            result = AppleLoginService.exchange_token("code")
+        assert result is None
+
+    @patch("users.services.social_login.requests.post")
+    def test_apple_exchange_token_json_value_error(
+        self, mock_post: MagicMock
+    ) -> None:
+        mock_res = MagicMock()
+        mock_res.status_code = 200
+        mock_res.json.side_effect = ValueError("invalid json")
+        mock_post.return_value = mock_res
+        with patch.object(
+            AppleLoginService, "_build_client_secret", return_value="secret"
+        ):
+            result = AppleLoginService.exchange_token("code")
+        assert result is None
+
+    @patch("users.services.social_login.requests.post")
+    def test_apple_exchange_token_response_not_dict_or_has_error(
+        self, mock_post: MagicMock
+    ) -> None:
+        mock_res = MagicMock()
+        mock_res.status_code = 200
+        mock_res.json.return_value = {"error": "invalid_grant"}
+        mock_post.return_value = mock_res
+        with patch.object(
+            AppleLoginService, "_build_client_secret", return_value="secret"
+        ):
+            result = AppleLoginService.exchange_token("code")
+        assert result is None
+
+    def test_apple_parse_id_token_exception(self) -> None:
+        result = AppleLoginService.parse_id_token("invalid.jwt.token")
+        assert result is None
+
+    def test_apple_authenticate_user_id_token_parse_fails(self) -> None:
+        with patch.object(
+            AppleLoginService, "parse_id_token", return_value=None
+        ):
+            user, error = AppleLoginService.authenticate_user(id_token="x")
+        assert user is None
+        assert error == "id_token 검증에 실패했습니다."
+
+    def test_apple_authenticate_user_code_none(self) -> None:
+        user, error = AppleLoginService.authenticate_user(code=None)
+        assert user is None
+        assert error == "인가 코드(code)가 없습니다."
+
+    def test_apple_authenticate_user_exchange_fails(self) -> None:
+        with patch.object(
+            AppleLoginService, "exchange_token", return_value=None
+        ):
+            user, error = AppleLoginService.authenticate_user(code="c")
+        assert user is None
+        assert error == "애플 토큰 교환에 실패했습니다."
+
+    def test_apple_authenticate_user_id_token_not_string(self) -> None:
+        with patch.object(
+            AppleLoginService, "exchange_token",
+            return_value={"id_token": 123},
+        ):
+            user, error = AppleLoginService.authenticate_user(code="c")
+        assert user is None
+        assert "id_token이 존재하지 않거나" in str(error)
+
+    def test_apple_authenticate_user_sub_or_email_missing(self) -> None:
+        with patch.object(
+            AppleLoginService, "parse_id_token",
+            return_value={"sub": "s1"},
+        ):
+            user, error = AppleLoginService.authenticate_user(id_token="x")
+        assert user is None
+        assert "sub/email" in str(error)
+
+    def test_apple_authenticate_user_create_fails(self) -> None:
+        with patch.object(
+            AppleLoginService, "parse_id_token",
+            return_value={"sub": "s1", "email": "e@e.com"},
+        ), patch.object(
+            AppleLoginService, "create_or_get_user",
+            return_value=(None, "이미 연결된 계정"),
+        ):
+            user, error = AppleLoginService.authenticate_user(id_token="x")
+        assert user is None
+        assert error == "이미 연결된 계정"
+
+
+class TestAppleLoginServiceAdditionalBranches:
+    def test_apple_create_or_get_user_empty_info(self) -> None:
+        user, error = AppleLoginService.create_or_get_user({})
+        assert user is None
+        assert error == "애플 사용자 정보가 비어있습니다."
+
+    def test_apple_create_or_get_user_missing_apple_id(self) -> None:
+        user, error = AppleLoginService.create_or_get_user({"email": "apple@example.com"})
+        assert user is None
+        assert error == "애플 사용자 ID(sub)가 없습니다."
+
+    @pytest.mark.django_db
+    def test_apple_create_or_get_user_social_returns_none(self) -> None:
+        with patch(
+            "users.services.social_login.SocialLoginService.get_or_create_user",
+            return_value=(None, "DB 오류"),
+        ):
+            user, error = AppleLoginService.create_or_get_user(
+                {"apple_id": "a1", "email": "a@a.com"}
+            )
+        assert user is None
+        assert error == "DB 오류"
+
+

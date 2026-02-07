@@ -67,7 +67,7 @@ class KakaoCallbackView(View):
                 login(request, user)
                 
                 # 안전한 리다이렉트 URL 결정
-                next_url = request.GET.get('next', '/')
+                next_url = request.GET.get('next') or request.session.pop('login_next', '/')
                 if not url_has_allowed_host_and_scheme(
                     url=next_url,
                     allowed_hosts={request.get_host()},

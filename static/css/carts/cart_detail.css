@@ -112,6 +112,18 @@
     display: inline-block;
 }
 
+.item-size {
+    margin: 4px 0 8px 0;
+}
+
+.item-size-text {
+    font-size: 13px;
+    color: #374151;
+    padding: 2px 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+}
+
 .item-description {
     font-size: 14px;
     color: #666;

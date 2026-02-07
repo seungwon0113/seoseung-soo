@@ -51,7 +51,7 @@ class TestOrderExchangeRefundService(TestSetupMixin):
         success, message = OrderExchangeRefundService.request_exchange_refund(self.order, request_type, reason)
         
         assert success is False
-        assert "이미 교환/환불 요청이 처리되었거나 진행 중입니다" in message
+        assert "이미 교환/반품 요청이 처리되었거나 진행 중입니다" in message
 
     def test_approve_exchange_refund_success(self) -> None:
         self.order.exchange_refund_request_status = "PENDING"
@@ -84,7 +84,7 @@ class TestOrderExchangeRefundService(TestSetupMixin):
         success, message = OrderExchangeRefundService.approve_exchange_refund(self.order, None)
         
         assert success is False
-        assert "처리할 수 없는 교환/환불 요청입니다" in message
+        assert "처리할 수 없는 교환/반품 요청입니다" in message
 
     def test_reject_exchange_refund_success(self) -> None:
         self.order.exchange_refund_request_status = "PENDING"
@@ -126,7 +126,7 @@ class TestOrderExchangeRefundService(TestSetupMixin):
         success, message = OrderExchangeRefundService.reject_exchange_refund(self.order, admin_note)
         
         assert success is False
-        assert "처리할 수 없는 교환/환불 요청입니다" in message
+        assert "처리할 수 없는 교환/반품 요청입니다" in message
 
 
 @pytest.mark.django_db

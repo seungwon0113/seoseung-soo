@@ -7,6 +7,7 @@ from django.views import View
 from products.forms.product_form import ProductForm, ProductImageForm
 from products.models import Product, ProductImage
 from products.services.color import ColorService
+from products.services.size import SizeService
 from users.models import User
 from users.utils.permission import AdminPermission
 
@@ -16,10 +17,12 @@ class ProductCreateView(AdminPermission, View):
         form = ProductForm()
         image_form = ProductImageForm()
         colors = ColorService.get_all_colors()
+        sizes = SizeService.get_all_sizes()
         context = {
             'form': form,
             'image_form': image_form,
             'colors': colors,
+            'sizes': sizes,
             'title': '상품 등록'
         }
         return render(request, 'products/admin/admin_product_create.html', context)
@@ -45,10 +48,12 @@ class ProductCreateView(AdminPermission, View):
             return redirect('product-list')
         
         colors = ColorService.get_all_colors()
+        sizes = SizeService.get_all_sizes()
         context = {
             'form': form,
             'image_form': image_form,
             'colors': colors,
+            'sizes': sizes,
             'title': '상품 등록'
         }
         return render(request, 'products/admin/admin_product_create.html', context)
@@ -60,11 +65,13 @@ class ProductUpdateView(AdminPermission, View):
         form = ProductForm(instance=product)
         image_form = ProductImageForm()
         colors = ColorService.get_all_colors()
+        sizes = SizeService.get_all_sizes()
         context = {
             'form': form,
             'image_form': image_form,
             'product': product,
             'colors': colors,
+            'sizes': sizes,
             'title': '상품 수정'
         }
         return render(request, 'products/admin/admin_product_create.html', context)
@@ -87,11 +94,13 @@ class ProductUpdateView(AdminPermission, View):
             return redirect('product-list')
         
         colors = ColorService.get_all_colors()
+        sizes = SizeService.get_all_sizes()
         context = {
             'form': form,
             'image_form': image_form,
             'product': product,
             'colors': colors,
+            'sizes': sizes,
             'title': '상품 수정'
         }
         return render(request, 'products/admin/admin_product_create.html', context)

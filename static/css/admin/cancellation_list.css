@@ -1,3 +1,69 @@
+.cancellation-list .order-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.cancellation-list .order-table {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e9e9e9;
+}
+
+.cancellation-list .order-list-body {
+  overflow-x: auto;
+}
+
+.cancellation-list .order-table.cancellation-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 880px;
+}
+
+.cancellation-list .order-table thead tr {
+  background: #f8f9fa;
+}
+
+.cancellation-list .order-table thead th {
+  text-align: center;
+}
+
+.cancellation-table .col-order-id { width: 14%; min-width: 180px; }
+.cancellation-table .col-customer { width: 18%; min-width: 160px; }
+.cancellation-table .col-items { width: 9%; min-width: 88px; }
+.cancellation-table .col-amount { width: 12%; min-width: 115px; }
+.cancellation-table .col-date { width: 12%; min-width: 125px; }
+.cancellation-table .col-reason { width: 20%; min-width: 120px; }
+.cancellation-table .col-status { width: 11%; min-width: 100px; }
+.cancellation-table .col-action { width: 11%; min-width: 120px; }
+
+.cancellation-list .order-table th,
+.cancellation-list .order-table td {
+  padding: 12px 10px;
+  vertical-align: middle;
+}
+
+.cancellation-list .filter-badge {
+  margin-left: 8px;
+  padding: 4px 10px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #555;
+}
+
+.cancellation-list .customer-cell .customer-email {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+  scrollbar-width: none;
+}
+
+.cancellation-list .customer-cell .customer-email::-webkit-scrollbar {
+  display: none;
+}
+
 .cancellation-reason-cell {
   vertical-align: middle;
   max-width: 200px;
@@ -125,7 +191,6 @@
   background-color: #ffffff;
   margin: 10% auto;
   padding: 0;
-  border-radius: 8px;
   width: 90%;
   max-width: 500px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -209,10 +274,25 @@
   border-top: 1px solid #e9e9e9;
 }
 
+.admin-memo-display {
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 12px;
+  min-height: 60px;
+  background: #f8f9fa;
+  font-size: 14px;
+  color: #374151;
+  border: 1px solid #e9e9e9;
+}
+
+.cancellation-list .order-row-clickable,
+.exchange-refund-list .order-row-clickable {
+  cursor: pointer;
+}
+
 .btn {
   padding: 10px 20px;
   border: none;
-  border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;

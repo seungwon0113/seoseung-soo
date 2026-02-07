@@ -27,7 +27,7 @@
             <div class="cart-items-section">
                 <div class="cart-items">
                     {% for item in cart_items %}
-                    <div class="cart-item" data-cart-id="{{ item.id }}" data-product-id="{{ item.product.id }}" {% if item.color %}data-color-id="{{ item.color.id }}"{% endif %}>
+                    <div class="cart-item" data-cart-id="{{ item.id }}" data-product-id="{{ item.product.id }}" {% if item.color %}data-color-id="{{ item.color.id }}"{% endif %} {% if item.size %}data-size-id="{{ item.size.id }}"{% endif %}>
                         <div class="item-image" onclick="window.location.href='{% url 'products-detail' item.product.name|product_slug %}'" style="cursor: pointer;">
                             {% if item.product.image.all %}
                                 <img src="{{ item.product.image.first.image.url }}" alt="{{ item.product.name }}">
@@ -40,8 +40,11 @@
                             <h3 class="item-name" onclick="window.location.href='{% url 'products-detail' item.product.name|product_slug %}'" style="cursor: pointer;">{{ item.product.name }}</h3>
                             {% if item.color %}
                             <div class="item-color">
-                                <span class="item-color-circle" style="background-color: {% if item.color.hex_code %}{{ item.color.hex_code }}{% else %}#e5e7eb{% endif %};"></span>
+                                <span class="item-color-circle" style="background-color: {% if item.color.hex_code %}{{ item.color.hex_code }}{% else %}#e5e7eb{% endif %};" title="{{ item.color.name }}"></span>
                             </div>
+                            {% endif %}
+                            {% if item.size %}
+                            <div class="item-size"><span class="item-size-text">{{ item.size.name }}</span></div>
                             {% endif %}
                             
                             <div class="item-price">

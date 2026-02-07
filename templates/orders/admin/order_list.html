@@ -5,6 +5,7 @@
 {% block style %}
 <link rel="stylesheet" href="{% static 'css/admin/product_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/admin/order_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin/cancellation_list.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -31,7 +32,15 @@
                 </div>
 
                 <div class="order-list-body">
-                    <table class="order-table">
+                    <table class="order-table order-table-fixed">
+                        <colgroup>
+                            <col class="col-order-id">
+                            <col class="col-customer">
+                            <col class="col-items">
+                            <col class="col-amount">
+                            <col class="col-date">
+                            <col class="col-status">
+                        </colgroup>
                         <thead>
                             <tr>
                                 <th>주문번호</th>
@@ -45,12 +54,14 @@
                         <tbody>
                             {% for order in orders %}
                             {% with items_count=order.items.all|length items_list=order.items.all %}
-                            <tr class="order-row order-row-clickable" data-order-id="{{ order.id }}">
-                                <td class="order-id">
-                                    <div class="order-id-with-toggle">
-                                        <span class="toggle-icon">▼</span>
-                                        <span>{{ order.order_id }}</span>
-                                    </div>
+                            <tr class="order-row order-row-clickable" data-order-number="{{ order.order_id }}"
+                                data-customer-email="{{ order.user.email }}"
+                                data-customer-name="{% if order.user.first_name or order.user.last_name %}{{ order.user.last_name }}{{ order.user.first_name }}{% else %}{{ order.user.username }}{% endif %}"
+                                data-order-date="{{ order.created_at|date:'Y-m-d H:i' }}"
+                                data-order-amount="{{ order.total_amount|floatformat:0|intcomma }}"
+                                data-order-status="{% if order.status == 'PAID' %}결제완료{% else %}결제대기/취소/실패{% endif %}">
+                                <td class="order-id-cell">
+                                    <span class="order-id" title="{{ order.order_id }}">{{ order.order_id }}</span>
                                 </td>
                                 <td class="customer-cell">
                                     <div class="customer-info">
@@ -65,27 +76,7 @@
                                     </div>
                                 </td>
                                 <td class="order-items-cell">
-                                    <div class="order-items-summary">
-                                        <span class="order-items-count">{{ items_count }}개 상품</span>
-                                    </div>
-                                    <div class="order-items-dropdown">
-                                        {% for item in items_list %}
-                                        <div class="order-item-detail">
-                                            <div class="order-item-header">
-                                                <span class="order-item-number">{{ forloop.counter }}</span>
-                                                <span class="order-item-name">{{ item.product_name }}</span>
-                                            </div>
-                                            <div class="order-item-info">
-                                                {% if item.color %}
-                                                <span class="order-item-color-label">색상:</span>
-                                                <span class="order-item-color">{{ item.color.name }}</span>
-                                                {% endif %}
-                                                <span class="order-item-quantity-label">수량:</span>
-                                                <span class="order-item-quantity">{{ item.quantity }}개</span>
-                                            </div>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
+                                    <span class="order-items-count">{{ items_count }}개 상품</span>
                                 </td>
                                 <td class="order-amount-cell">
                                     <div class="order-amount">{{ order.total_amount|floatformat:0|intcomma }}원</div>
@@ -99,6 +90,29 @@
                                     {% else %}
                                         <span class="status-indicator status-inactive" title="결제대기/취소/실패"></span>
                                     {% endif %}
+                                    <div class="order-detail-content" style="display:none">
+                                        {% for item in items_list %}
+                                        <div class="order-item-detail">
+                                            <div class="order-item-header">
+                                                <span class="order-item-number">{{ forloop.counter }}</span>
+                                                <span class="order-item-name">{{ item.product_name }}</span>
+                                            </div>
+                                            <div class="order-item-info">
+                                                {% if item.color %}
+                                                <span class="order-item-color-label">색상:</span>
+                                                <span class="order-item-color-swatch" style="background-color: {% if item.color.hex_code %}{{ item.color.hex_code }}{% else %}#e5e7eb{% endif %};" title="{{ item.color.name }}"></span>
+                                                <span class="order-item-color-name">{{ item.color.name }}</span>
+                                                {% endif %}
+                                                {% if item.size %}
+                                                <span class="order-item-size-label">사이즈:</span>
+                                                <span class="order-item-size-name">{{ item.size.name }}</span>
+                                                {% endif %}
+                                                <span class="order-item-quantity-label">수량:</span>
+                                                <span class="order-item-quantity">{{ item.quantity }}개</span>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
                                 </td>
                             </tr>
                             {% endwith %}
@@ -125,6 +139,31 @@
                     {% endif %}
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div id="orderDetailModal" class="modal">
+    <div class="modal-content order-detail-modal-content">
+        <div class="modal-header">
+            <h3>주문 상세</h3>
+            <span class="close" onclick="closeOrderDetailModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="order-detail-summary">
+                <p><strong>주문번호</strong> <span id="orderDetailNumber"></span></p>
+                <p><strong>고객</strong> <span id="orderDetailCustomer"></span></p>
+                <p><strong>주문일시</strong> <span id="orderDetailDate"></span></p>
+                <p><strong>주문금액</strong> <span id="orderDetailAmount"></span></p>
+                <p><strong>결제상태</strong> <span id="orderDetailStatus"></span></p>
+            </div>
+            <div class="form-group">
+                <label>상품 목록</label>
+                <div id="orderDetailProducts" class="order-detail-products"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeOrderDetailModal()">닫기</button>
         </div>
     </div>
 </div>

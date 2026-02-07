@@ -68,7 +68,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (cartForm) {
         cartForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
+            const hasSizeOptions = document.querySelectorAll('.size-btn').length > 0;
+            const selectedSizeId = document.getElementById('selectedSizeId');
+            if (hasSizeOptions && selectedSizeId && !selectedSizeId.value) {
+                const message = '사이즈를 선택해주세요.';
+                if (typeof toast !== 'undefined') {
+                    toast.error(message, '알림');
+                } else {
+                    alert(message);
+                }
+                return;
+            }
+
             const quantityDisplay = document.getElementById('quantityDisplay');
             const cartQuantity = document.getElementById('cartQuantity');
             
@@ -378,20 +389,29 @@ function updateDrawerQuantity() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const colorOptionBtns = document.querySelectorAll('.color-option-btn');
-    const hiddenColorInput = document.getElementById('selectedColorId');
-    colorOptionBtns.forEach(btn => {
+function setupOptionButtons(btnSelector, inputId, datasetKey) {
+    const buttons = document.querySelectorAll(btnSelector);
+    const input = document.getElementById(inputId);
+    if (!buttons.length || !input) return;
+
+    buttons.forEach(btn => {
         btn.addEventListener('click', function() {
-            colorOptionBtns.forEach(b => b.classList.remove('active'));
+            buttons.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            const selectedColor = this.dataset.color;
-            if (hiddenColorInput) {
-                hiddenColorInput.value = selectedColor || '';
+            const value = this.dataset[datasetKey];
+            if (value) {
+                input.value = value;
             }
         });
     });
-    
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupOptionButtons('.color-option-btn', 'selectedColorId', 'color');
+    setupOptionButtons('.drawer-color-option-btn', 'drawerSelectedColorId', 'color');
+    setupOptionButtons('.size-btn', 'selectedSizeId', 'sizeId');
+    setupOptionButtons('.drawer-size-btn', 'drawerSelectedSizeId', 'sizeId');
+
     const mobileFabBtn = document.getElementById('mobileFabBtn');
     const drawerOverlay = document.getElementById('drawerOverlay');
     const drawerClose = document.getElementById('drawerClose');
@@ -407,33 +427,30 @@ document.addEventListener('DOMContentLoaded', function() {
     if (drawerClose) {
         drawerClose.addEventListener('click', closeMobileDrawer);
     }
-    
-    const drawerSizeBtns = document.querySelectorAll('.drawer-size-btn');
-    drawerSizeBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            drawerSizeBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-        });
-    });
-    
-    const drawerColorBtns = document.querySelectorAll('.drawer-color-option-btn');
-    const drawerHiddenColorInput = document.getElementById('drawerSelectedColorId');
-    drawerColorBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            drawerColorBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            const selectedColor = this.dataset.color;
-            if (drawerHiddenColorInput) {
-                drawerHiddenColorInput.value = selectedColor || '';
-            }
-        });
-    });
-    
+
     const drawerCartForm = document.querySelector('.drawer-cart-form');
     if (drawerCartForm) {
         drawerCartForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
+            const hasDrawerSizeOptions = document.querySelectorAll('.drawer-size-btn').length > 0;
+            const drawerSelectedSizeId = document.getElementById('drawerSelectedSizeId');
+            if (hasDrawerSizeOptions && drawerSelectedSizeId && !drawerSelectedSizeId.value) {
+                const message = '사이즈를 선택해주세요.';
+                if (typeof toast !== 'undefined') {
+                    toast.error(message, '알림');
+                } else {
+                    alert(message);
+                }
+                return;
+            }
+
+            const drawerCartQuantity = document.getElementById('drawerCartQuantity');
+            const drawerQuantityDisplay = document.getElementById('drawerQuantityDisplay');
+            if (drawerCartQuantity && drawerQuantityDisplay) {
+                drawerCartQuantity.value = drawerQuantityDisplay.textContent || '1';
+            }
+
             const formData = new FormData(drawerCartForm);
             const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             
@@ -477,8 +494,218 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    const buyNowButton = document.getElementById('buyNowButton');
+    if (buyNowButton) {
+        buyNowButton.addEventListener('click', function () {
+            handleImmediatePurchase(false);
+        });
+    }
+    
+    const drawerBuyBtn = document.getElementById('drawerBuyBtn');
+    if (drawerBuyBtn) {
+        drawerBuyBtn.addEventListener('click', function () {
+            handleImmediatePurchase(true);
+        });
+    }
 });
 
-function handleDrawerBuy() {
-    alert('구매하기 기능은 준비중입니다.');
+function getCsrfToken() {
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='));
+    return cookieValue ? cookieValue.split('=')[1] : '';
 }
+
+function handleImmediatePurchase(isMobileDrawer) {
+    const productIdElement = document.getElementById('buyNowButton');
+    if (!productIdElement) {
+        alert('상품 정보를 찾을 수 없습니다.');
+        return;
+    }
+
+    const isAuthenticated = productIdElement.dataset.isAuthenticated === 'true';
+    const loginUrl = productIdElement.dataset.loginUrl || '/login/';
+    if (!isAuthenticated) {
+        const nextUrl = window.location.pathname + window.location.search;
+        window.location.href = `${loginUrl}?next=${encodeURIComponent(nextUrl)}`;
+        return;
+    }
+
+    const csrfTokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    const csrftoken = csrfTokenInput ? csrfTokenInput.value : getCsrfToken();
+
+    if (!csrftoken) {
+        const nextUrl = window.location.pathname + window.location.search;
+        window.location.href = `${loginUrl}?next=${encodeURIComponent(nextUrl)}`;
+        return;
+    }
+
+    const productId = parseInt(productIdElement.dataset.productId || '0', 10);
+    if (!productId) {
+        alert('상품 정보를 찾을 수 없습니다.');
+        return;
+    }
+
+    let quantity = 1;
+    let colorId = null;
+    let sizeId = null;
+
+    if (isMobileDrawer) {
+        const drawerQuantityDisplay = document.getElementById('drawerQuantityDisplay');
+        if (drawerQuantityDisplay) {
+            quantity = parseInt(drawerQuantityDisplay.textContent || '1', 10);
+        }
+        const drawerHiddenColorInput = document.getElementById('drawerSelectedColorId');
+        if (drawerHiddenColorInput && drawerHiddenColorInput.value) {
+            colorId = parseInt(drawerHiddenColorInput.value, 10);
+        }
+        const drawerHiddenSizeInput = document.getElementById('drawerSelectedSizeId');
+        if (drawerHiddenSizeInput && drawerHiddenSizeInput.value) {
+            sizeId = parseInt(drawerHiddenSizeInput.value, 10);
+        }
+    } else {
+        const quantityDisplay = document.getElementById('quantityDisplay');
+        if (quantityDisplay) {
+            quantity = parseInt(quantityDisplay.textContent || '1', 10);
+        }
+        const hiddenColorInput = document.getElementById('selectedColorId');
+        if (hiddenColorInput && hiddenColorInput.value) {
+            colorId = parseInt(hiddenColorInput.value, 10);
+        }
+        const hiddenSizeInput = document.getElementById('selectedSizeId');
+        if (hiddenSizeInput && hiddenSizeInput.value) {
+            sizeId = parseInt(hiddenSizeInput.value, 10);
+        }
+    }
+
+    const hasSizeOptions = document.querySelectorAll('.size-btn, .drawer-size-btn').length > 0;
+    if (hasSizeOptions && !sizeId) {
+        const message = '사이즈를 선택해주세요.';
+        if (typeof toast !== 'undefined') {
+            toast.error(message, '알림');
+        } else {
+            alert(message);
+        }
+        return;
+    }
+
+    const items = [
+        {
+            product_id: productId,
+            quantity: quantity,
+            color_id: colorId,
+            size_id: sizeId,
+        },
+    ];
+
+    fetch('/orders/preorder/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ items }),
+    })
+        .then(response => {
+            // 로그인 필요로 인해 Django의 LoginRequiredMixin이 리다이렉트한 경우
+            if (response.redirected && response.url.includes('/login')) {
+                window.location.href = response.url;
+                // 이후 체이닝 중단
+                return Promise.reject(new Error('redirect_to_login'));
+            }
+
+            if (!response.ok) {
+                return response
+                    .json()
+                    .catch(() => null)
+                    .then(data => {
+                        const message =
+                            data && data.message
+                                ? data.message
+                                : '주문 처리 중 오류가 발생했습니다.';
+                        throw new Error(message);
+                    });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.redirectUrl) {
+                window.location.href = data.redirectUrl;
+            } else {
+                const message = data.message || '주문 처리 중 오류가 발생했습니다.';
+                if (typeof toast !== 'undefined') {
+                    toast.error(message, '오류');
+                } else {
+                    alert(message);
+                }
+            }
+        })
+        .catch(error => {
+            // 로그인 리다이렉트는 이미 처리했으므로 추가 알림 불필요
+            if (error && error.message === 'redirect_to_login') {
+                return;
+            }
+
+            if (typeof toast !== 'undefined') {
+                toast.error(
+                    error && error.message
+                        ? error.message
+                        : '주문 처리 중 오류가 발생했습니다.',
+                    '오류'
+                );
+            } else {
+                alert(
+                    (error && error.message) ||
+                        '주문 처리 중 오류가 발생했습니다.'
+                );
+            }
+        });
+}
+
+function handleReviewWrite() {
+    const buyNowButton = document.getElementById('buyNowButton');
+    const productId = buyNowButton ? buyNowButton.dataset.productId : null;
+    const isAuthenticated = buyNowButton ? buyNowButton.dataset.isAuthenticated === 'true' : false;
+    const loginUrl = buyNowButton ? buyNowButton.dataset.loginUrl : '/users/login/';
+    
+    if (!productId) {
+        alert('상품 정보를 찾을 수 없습니다.');
+        return;
+    }
+    
+    if (!isAuthenticated) {
+        const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `${loginUrl}?next=${currentUrl}`;
+        return;
+    }
+    
+    openReviewModal(productId);
+}
+
+function openReviewModal(productId) {
+    const modal = document.getElementById('reviewWriteModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        const form = modal.querySelector('form');
+        if (form) {
+            form.action = `/reviews/create/${productId}/`;
+        }
+    }
+}
+
+function closeReviewModal() {
+    const modal = document.getElementById('reviewWriteModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const reviewWriteBtns = document.querySelectorAll('.review-write-btn');
+    reviewWriteBtns.forEach(btn => {
+        btn.addEventListener('click', handleReviewWrite);
+    });
+});

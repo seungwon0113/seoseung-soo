@@ -20,8 +20,9 @@ class CartCreateView(LoginRequiredMixin, View):
             product = form.cleaned_data['product_id']
             quantity = form.cleaned_data['quantity']
             color = form.cleaned_data.get('color_id')
+            size = form.cleaned_data.get('size_id')
 
-            existing_cart = Cart.objects.filter(user=user, product=product, color=color).first()
+            existing_cart = Cart.objects.filter(user=user, product=product, color=color, size=size).first()
 
             if existing_cart:
                 new_quantity = existing_cart.quantity + quantity
@@ -42,7 +43,8 @@ class CartCreateView(LoginRequiredMixin, View):
                     user=user,
                     product=product,
                     quantity=quantity,
-                    color=color
+                    color=color,
+                    size=size,
                 )
                 message = f'{product.name} 상품이 장바구니에 추가되었습니다.'
 

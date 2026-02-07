@@ -7,6 +7,7 @@ from payments.views import (
     TossPaymentRequestView,
     TossSuccessView,
 )
+from payments.views.point_only_view import PointOnlyPaymentView
 from payments.views.virtual_bank_view import (
     TossVirtualRequestView,
     TossVirtualWebhookView,
@@ -22,4 +23,5 @@ urlpatterns = [
     path("toss/confirm/", TossConfirmView.as_view(), name="toss-confirm"),
     path("toss/virtual/request/", TossVirtualRequestView.as_view(), name="toss-virtual-request"),
     path("toss/webhook/", TossVirtualWebhookView.as_view(), name="toss-webhook"),
+    path("point-only/", PointOnlyPaymentView.as_view(), name="point-only"),
 ]

@@ -8,6 +8,11 @@ from products.views.admin.product_color_views import (
     AdminColorUpdateView,
     AdminProductColorView,
 )
+from products.views.admin.product_size_views import (
+    AdminProductSizeView,
+    AdminSizeDeleteView,
+    AdminSizeUpdateView,
+)
 from products.views.customers.product_list import ProductListView
 from products.views.products_detail import ProductsDetailView
 
@@ -21,5 +26,8 @@ urlpatterns = [
     path("admin/color/", AdminProductColorView.as_view(), name="admin-product-color"),
     path("admin/color/<int:pk>/update/", AdminColorUpdateView.as_view(), name="admin-color-update"),
     path("admin/color/<int:pk>/delete/", AdminColorDeleteView.as_view(), name="admin-color-delete"),
+    path("admin/size/", AdminProductSizeView.as_view(), name="admin-product-size"),
+    path("admin/size/<int:pk>/update/", AdminSizeUpdateView.as_view(), name="admin-size-update"),
+    path("admin/size/<int:pk>/delete/", AdminSizeDeleteView.as_view(), name="admin-size-delete"),
     path("list/", ProductListView.as_view(), name="customer-product-list"),
 ]

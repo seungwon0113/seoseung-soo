@@ -1,6 +1,7 @@
 from django.urls import include, path
 
 from users.views import LoginView
+from config.views import SiteSettingView
 from users.views.admin.user_list import AdminUserListView
 from users.views.check_duplicate import CheckDuplicateView
 from users.views.consent import PersonalInfoConsent
@@ -18,6 +19,7 @@ from users.views.social_login import (
 
 urlpatterns = [
     path("admin/users/", AdminUserListView.as_view(), name="admin-user-list"),
+    path("admin/site-settings/", SiteSettingView.as_view(), name="site-settings"),
     path("mypage/", MyPageView.as_view(), name="mypage"),
     path("membership/", include("membership.urls"), name="coupon-point"),
     path("orders/", include("orders.urls", namespace="orders")),

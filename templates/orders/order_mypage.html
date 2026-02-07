@@ -124,6 +124,9 @@
                                         <span class="item-color-circle" style="background-color: {% if item.color.hex_code %}{{ item.color.hex_code }}{% else %}#e5e7eb{% endif %};" title="{{ item.color.name }}"></span>
                                     </div>
                                     {% endif %}
+                                    {% if item.size %}
+                                    <div class="item-size"><span class="item-size-text">{{ item.size.name }}</span></div>
+                                    {% endif %}
                                     
                                     <div class="item-price">
                                         <span class="price">{{ item.unit_price|floatformat:0|intcomma }}원</span>
@@ -148,7 +151,7 @@
                             </div>
                             <div class="order-actions">
                                 {% if order.shipping_status == "DELIVERED" %}
-                                <button type="button" class="exchange-refund-link" onclick="showExchangeRefundModal({{ order.id }}, '{{ order.order_id }}', {{ order.total_amount }})">교환/환불</button>
+                                <button type="button" class="exchange-refund-link" onclick="showExchangeRefundModal({{ order.id }}, '{{ order.order_id }}', {{ order.total_amount }})">교환/반품</button>
                                 {% else %}
                                 <button type="button" class="cancellation-link" onclick="showCancellationModal({{ order.id }}, '{{ order.order_id }}', {{ order.total_amount }})">주문 취소</button>
                                 {% endif %}
@@ -203,7 +206,7 @@
 <div id="exchangeRefundModal" class="cancellation-modal">
     <div class="cancellation-modal-content">
         <div class="cancellation-modal-header">
-            <h3>교환/환불 요청</h3>
+            <h3>교환/반품 요청</h3>
             <span class="cancellation-modal-close" onclick="closeExchangeRefundModal()">&times;</span>
         </div>
         <form method="post" id="exchangeRefundForm" action="">
@@ -214,7 +217,7 @@
                     <p><strong>주문금액:</strong> <span id="exchangeRefundOrderAmount"></span>원</p>
                 </div>
                 <div class="form-group">
-                    <label for="exchangeRefundType">교환/환불 유형 <span class="required">*</span></label>
+                    <label for="exchangeRefundType">교환/반품 유형 <span class="required">*</span></label>
                     {{ exchange_refund_form.type }}
                     {% if exchange_refund_form.type.errors %}
                         <div class="errorlist">
@@ -225,7 +228,7 @@
                     {% endif %}
                 </div>
                 <div class="form-group">
-                    <label for="exchangeRefundReason">교환/환불 사유 <span class="required">*</span></label>
+                    <label for="exchangeRefundReason">교환/반품 사유 <span class="required">*</span></label>
                     {{ exchange_refund_form.reason }}
                     {% if exchange_refund_form.reason.errors %}
                         <div class="errorlist">
@@ -238,7 +241,7 @@
             </div>
             <div class="cancellation-modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeExchangeRefundModal()">취소</button>
-                <button type="submit" class="btn btn-primary">교환/환불 요청하기</button>
+                <button type="submit" class="btn btn-primary">교환/반품 요청하기</button>
             </div>
         </form>
     </div>

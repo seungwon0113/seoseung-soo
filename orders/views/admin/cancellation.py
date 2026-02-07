@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db.models import Count, Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
@@ -17,6 +18,24 @@ class AdminCancellationListView(AdminPermission, View):
 
         orders_qs = Filtering.cancellation_list_filter(request)
 
+        base_qs = Order.objects.filter(
+            cancellation_request_status__in=[
+                Order.CancellationRequestStatus.PENDING,
+                Order.CancellationRequestStatus.APPROVED,
+                Order.CancellationRequestStatus.REJECTED,
+            ]
+        )
+        agg = base_qs.aggregate(
+            pending=Count("id", filter=Q(cancellation_request_status=Order.CancellationRequestStatus.PENDING)),
+            approved=Count("id", filter=Q(cancellation_request_status=Order.CancellationRequestStatus.APPROVED)),
+            rejected=Count("id", filter=Q(cancellation_request_status=Order.CancellationRequestStatus.REJECTED)),
+        )
+        cancellation_stats = {
+            "pending": agg["pending"],
+            "approved": agg["approved"],
+            "rejected": agg["rejected"],
+        }
+
         paginator = Paginator(orders_qs, 20)
         page_obj = paginator.get_page(request.GET.get("page") or "1")
 
@@ -25,6 +44,7 @@ class AdminCancellationListView(AdminPermission, View):
             "status": status,
             "page_obj": page_obj,
             "orders": page_obj.object_list,
+            "cancellation_stats": cancellation_stats,
         }
         return render(request, "orders/admin/cancellation_list.html", context)
 

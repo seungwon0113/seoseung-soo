@@ -89,7 +89,8 @@
 .desktop-mypage-customer-container,
 .desktop-mypage-products-container,
 .desktop-mypage-order-container,
-.desktop-mypage-color-container {
+.desktop-mypage-color-container,
+.desktop-mypage-site-container {
     margin-bottom: 24px;
     flex: 1;
     min-width: 0;
@@ -98,7 +99,8 @@
 .desktop-mypage-customer-container h4,
 .desktop-mypage-products-container h4,
 .desktop-mypage-order-container h4,
-.desktop-mypage-color-container h4 {
+.desktop-mypage-color-container h4,
+.desktop-mypage-site-container h4 {
     border-bottom: 1px solid #d1d1d1;
     font-size: 14px;
     font-weight: 600;
@@ -111,7 +113,8 @@
 .desktop-mypage-customer-container ul,
 .desktop-mypage-products-container ul,
 .desktop-mypage-order-container ul,
-.desktop-mypage-color-container ul {
+.desktop-mypage-color-container ul,
+.desktop-mypage-site-container ul {
     list-style: none;
     padding: 0;
     margin: 0;
@@ -120,14 +123,16 @@
 .desktop-mypage-customer-container ul li,
 .desktop-mypage-products-container ul li,
 .desktop-mypage-order-container ul li,
-.desktop-mypage-color-container ul li {
+.desktop-mypage-color-container ul li,
+.desktop-mypage-site-container ul li {
     margin: 0;
 }
 
 .desktop-mypage-customer-container ul li a,
 .desktop-mypage-products-container ul li a,
 .desktop-mypage-order-container ul li a,
-.desktop-mypage-color-container ul li a {
+.desktop-mypage-color-container ul li a,
+.desktop-mypage-site-container ul li a {
     display: block;
     padding: 12px 24px;
     color: #1b1b1b;
@@ -140,7 +145,8 @@
 .desktop-mypage-customer-container ul li a:hover,
 .desktop-mypage-products-container ul li a:hover,
 .desktop-mypage-order-container ul li a:hover,
-.desktop-mypage-color-container ul li a:hover {
+.desktop-mypage-color-container ul li a:hover,
+.desktop-mypage-site-container ul li a:hover {
     background-color: #f8f9fa;
     color: #333;
 }
@@ -148,7 +154,8 @@
 .desktop-mypage-customer-container ul li a.active,
 .desktop-mypage-products-container ul li a.active,
 .desktop-mypage-order-container ul li a.active,
-.desktop-mypage-color-container ul li a.active {
+.desktop-mypage-color-container ul li a.active,
+.desktop-mypage-site-container ul li a.active {
     background-color: #f8f9fa;
     color: #1b1b1b;
     border-left-color: #1b1b1b;

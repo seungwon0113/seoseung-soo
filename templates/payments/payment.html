@@ -23,7 +23,7 @@
                         <label class="form-label">받는사람<span class="required">*</span></label>
                     </div>
                     <div class="form-input-cell">
-                        <input type="text" class="form-input" placeholder="이름을 입력해주세요" required>
+                        <input type="text" id="recipientName" class="form-input" placeholder="이름을 입력해주세요" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -48,11 +48,11 @@
                 </div>
                 <div class="form-input-cell">
                     <div class="phone-input-wrapper">
-                        <input type="tel" class="form-input phone-input" placeholder="010" maxlength="3" required>
+                        <input type="tel" id="phone1" class="form-input phone-input" placeholder="010" maxlength="3" required>
                         <span class="phone-separator">-</span>
-                        <input type="tel" class="form-input phone-input" placeholder="1234" maxlength="4" required>
+                        <input type="tel" id="phone2" class="form-input phone-input" placeholder="1234" maxlength="4" required>
                         <span class="phone-separator">-</span>
-                        <input type="tel" class="form-input phone-input" placeholder="5678" maxlength="4" required>
+                        <input type="tel" id="phone3" class="form-input phone-input" placeholder="5678" maxlength="4" required>
                     </div>
                 </div>
             </div>
@@ -63,9 +63,9 @@
                 </div>
                 <div class="form-input-cell">
                     <div class="email-input-wrapper">
-                        <input type="text" class="form-input email-input" placeholder="example" required>
+                        <input type="text" id="emailId" class="form-input email-input" placeholder="example" required>
                         <span class="email-at">@</span>
-                        <select class="form-input email-domain">
+                        <select id="emailDomain" class="form-input email-domain">
                             <option value="naver.com">naver.com</option>
                             <option value="gmail.com">gmail.com</option>
                             <option value="daum.net">daum.net</option>
@@ -75,22 +75,6 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="form-row">
-                <div class="form-label-cell">
-                    <label class="form-label">메시지 선택</label>
-                </div>
-                <div class="form-input-cell">
-                    <select class="form-input">
-                        <option value="">-- 메시지 선택(선택사항) --</option>
-                        <option value="door">문 앞에 놓아주세요</option>
-                        <option value="security">경비실에 맡겨주세요</option>
-                        <option value="call">배송 전 연락주세요</option>
-                        <option value="custom">직접 입력</option>
-                    </select>
-                </div>
-            </div>
-            
             <div class="form-row">
                 <div class="form-label-cell">
                 </div>
@@ -168,7 +152,22 @@
     <div class="discount-info-container">
         <div class="form-section">
             <div class="discount-section">
-                <h4 class="discount-title">할인/부가결제</h4>
+                <h4 class="discount-title">포인트/쿠폰</h4>
+                
+                <div class="point-section">
+                    <div class="point-header">
+                        <span class="point-label">포인트 사용</span>
+                        <span class="point-balance">보유 <strong id="availablePoints">{{ point_balance|intcomma }}</strong>P</span>
+                    </div>
+                    <div class="point-input-group">
+                        <input type="number" id="pointInput" class="point-input" placeholder="0" min="0" max="{{ point_balance }}" value="0"
+                               data-max-point="{{ point_balance }}" data-final-amount="{{ final_amount }}">
+                        <span class="point-unit">P</span>
+                        <button type="button" class="point-use-all-btn" id="useAllPointsBtn">전액사용</button>
+                    </div>
+                    <p class="point-notice">* 최소 1,000P 이상부터 사용 가능하며, 전액 포인트 결제가 가능합니다.</p>
+                </div>
+
                 <div class="discount-item">
                     <span class="discount-label">자동 할인</span>
                     <select class="discount-select">
@@ -207,9 +206,13 @@
                                 {% endif %}
                             </span>
                         </div>
+                        <div class="summary-row point-discount-row" style="display: none;">
+                            <span class="label">포인트 사용:</span>
+                            <span class="value point-discount-value">-0원</span>
+                        </div>
                         <div class="summary-row total">
                             <span class="label">총 결제 금액:</span>
-                            <span class="value">{{ final_amount|intcomma }}원</span>
+                            <span class="value" id="finalAmountDisplay">{{ final_amount|intcomma }}원</span>
                         </div>
                     </div>
                 {% else %}
@@ -228,6 +231,51 @@
                         </div>
                     </div>
                 {% endif %}
+            </div>
+        </div>
+
+        <div class="payment-method-container">
+            <div class="form-section">
+                <h3 class="section-title">결제 수단</h3>
+                <div class="payment-method-options">
+                    <label class="payment-method-option selected" data-method="card">
+                        <input type="radio" name="payment-method" value="card" checked>
+                        <div class="option-content">
+                            <span class="option-text">카드 결제</span>
+                            <span class="option-desc">토스페이먼츠</span>
+                        </div>
+                        <span class="check-icon">✓</span>
+                    </label>
+                    <label class="payment-method-option" data-method="virtual">
+                        <input type="radio" name="payment-method" value="virtual">
+                        <div class="option-content">
+                            <span class="option-text">무통장 입금</span>
+                            <span class="option-desc">가상계좌</span>
+                        </div>
+                        <span class="check-icon">✓</span>
+                    </label>
+                </div>
+
+                <div class="virtual-account-section" id="virtualAccountSection" style="display: none;">
+                    <div class="bank-select-wrapper">
+                        <label class="bank-select-label">입금 은행 선택</label>
+                        <select class="bank-select" id="bankSelect">
+                            <option value="">은행을 선택해주세요</option>
+                            {% for code, name in bank_choices %}
+                            <option value="{{ code }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="depositor-name-wrapper">
+                        <label class="depositor-name-label">입금자명</label>
+                        <input type="text" class="depositor-name-input" id="depositorName" placeholder="입금자명을 입력해주세요">
+                    </div>
+                    <div class="virtual-account-notice">
+                        <p>• 가상계좌는 주문 건당 고유 계좌번호가 발급됩니다.</p>
+                        <p>• 발급된 계좌번호로 24시간 내에 입금해주세요.</p>
+                        <p>• 입금 확인 후 자동으로 결제가 완료됩니다.</p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -260,6 +308,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script src="https://js.tosspayments.com/v1/payment"></script>
 <script src="{% static 'js/payments/payments.js' %}" defer></script>
 {% endblock %}

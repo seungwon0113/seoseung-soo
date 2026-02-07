@@ -25,7 +25,7 @@ class OrderView(LoginRequiredMixin, View):
             shipping_status__in=[Order.ShippingStatus.PENDING, Order.ShippingStatus.SHIPPING, Order.ShippingStatus.DELIVERED],
             cancellation_request_status=Order.CancellationRequestStatus.NONE,
             exchange_refund_request_status=Order.ExchangeRefundRequestStatus.NONE
-        ).order_by('-created_at').prefetch_related('items__color')[:10]
+        ).order_by('-created_at').prefetch_related('items__color', 'items__size')[:10]
 
         OrderStatisticsService.attach_products_to_orders(list(shipping_orders))
 

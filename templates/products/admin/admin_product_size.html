@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/admin/product_color.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1 class="admin-title">사이즈 관리</h1>
+        <a href="{% url 'product-list' %}" class="btn btn-secondary">상품 목록</a>
+    </div>
+
+    <div class="color-management">
+        <div class="color-form-section">
+            <h2 class="section-title">
+                {% if size %}사이즈 수정{% else %}새 사이즈 추가{% endif %}
+            </h2>
+
+            <form method="post" class="color-form">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">
+                        사이즈 이름 *
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="form-error">{{ form.name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        {% if size %}수정{% else %}추가{% endif %}
+                    </button>
+                    {% if size %}
+                    <a href="{% url 'admin-product-size' %}" class="btn btn-secondary">취소</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <div class="color-list-section">
+            <h2 class="section-title">등록된 사이즈 목록</h2>
+
+            {% if sizes %}
+            <div class="color-grid">
+                {% for size_item in sizes %}
+                <div class="color-card" style="border-top: 4px solid #e5e7eb;">
+                    <div class="color-info">
+                        <div class="color-details">
+                            <h4 class="color-name">{{ size_item.name }}</h4>
+                        </div>
+                    </div>
+                    <div class="color-actions">
+                        <a href="{% url 'admin-size-update' size_item.pk %}" class="btn btn-sm btn-secondary">수정</a>
+                        <form method="post" action="{% url 'admin-size-delete' size_item.pk %}" class="delete-form" onsubmit="return confirm('이 사이즈를 삭제하시겠습니까?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <h3>등록된 사이즈가 없습니다</h3>
+                <p>새로운 사이즈를 추가해보세요. (예: S, M, L, XL)</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

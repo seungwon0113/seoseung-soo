@@ -21,6 +21,7 @@
 
 .order-list-body {
   padding: 24px 32px;
+  overflow-x: auto;
 }
 
 .order-table {
@@ -28,16 +29,51 @@
   border-collapse: collapse;
 }
 
+.order-table.order-table-fixed {
+  table-layout: fixed;
+  min-width: 800px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e9e9e9;
+}
+
 .order-table thead tr {
-  text-align: left;
+  text-align: center;
   border-bottom: 1px solid #e9e9e9;
   color: #666;
   font-size: 12px;
+  background: #f8f9fa;
+}
+
+.order-table thead th {
+  text-align: center;
+  white-space: nowrap;
 }
 
 .order-table th,
 .order-table td {
-  padding: 12px 8px;
+  padding: 12px 10px;
+  vertical-align: middle;
+}
+
+/* 주문 목록 칸 규격 */
+.order-table-fixed .col-order-id { width: 16%; min-width: 160px; }
+.order-table-fixed .col-customer { width: 22%; min-width: 180px; }
+.order-table-fixed .col-items { width: 10%; min-width: 80px; }
+.order-table-fixed .col-amount { width: 14%; min-width: 110px; }
+.order-table-fixed .col-date { width: 14%; min-width: 115px; }
+.order-table-fixed .col-status { width: 10%; min-width: 80px; }
+
+.order-list .order-table .order-items-cell {
+  text-align: center;
+}
+
+.order-list .order-table .order-amount-cell {
+  text-align: right;
+}
+
+.order-list .order-table .order-date-cell {
+  white-space: nowrap;
 }
 
 .order-table tbody tr {
@@ -84,6 +120,45 @@
   font-size: 13px;
   color: #1b1b1b;
   font-weight: 500;
+}
+
+/* 주문번호: 칸 안에서 좌우 스크롤 (스크롤바 숨김) */
+.order-list .order-table .order-id-cell,
+.shipping-table .order-id-cell {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.order-list .order-table .order-id-cell::-webkit-scrollbar,
+.shipping-table .order-id-cell::-webkit-scrollbar {
+  display: none;
+}
+
+.order-list .order-table .order-id-cell .order-id,
+.shipping-table .order-id-cell .order-id {
+  display: inline-block;
+  white-space: nowrap;
+  min-width: min-content;
+}
+
+/* 고객 이메일: 칸 안에서 좌우 스크롤 (스크롤바 숨김) */
+.order-list .order-table .customer-cell .customer-email,
+.shipping-table .customer-cell .customer-email {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+  scrollbar-width: none;
+}
+
+.order-list .order-table .customer-cell .customer-email::-webkit-scrollbar,
+.shipping-table .customer-cell .customer-email::-webkit-scrollbar {
+  display: none;
 }
 
 .customer-info {
@@ -198,6 +273,32 @@
   border-radius: 4px;
 }
 
+.order-item-color-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.order-item-color-name {
+  color: #374151;
+  font-size: 12px;
+}
+
+.order-item-size-label,
+.order-item-size-name {
+  color: #374151;
+  font-size: 12px;
+}
+
+.order-item-size-label {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
 .order-item-quantity {
   color: #374151;
   font-weight: 500;
@@ -290,4 +391,27 @@
   .order-table {
     min-width: 800px;
   }
+}
+
+.order-detail-summary p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+.order-detail-summary p:last-of-type {
+  margin-bottom: 16px;
+}
+
+.order-detail-products {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9e9e9;
+}
+
+.order-detail-modal-content {
+  max-width: 520px;
 }

@@ -150,6 +150,9 @@
                                         <span class="item-color-circle" style="background-color: {% if item.color.hex_code %}{{ item.color.hex_code }}{% else %}#e5e7eb{% endif %};" title="{{ item.color.name }}"></span>
                                     </div>
                                     {% endif %}
+                                    {% if item.size %}
+                                    <div class="item-size"><span class="item-size-text">{{ item.size.name }}</span></div>
+                                    {% endif %}
                                     
                                     <div class="item-price">
                                         <span class="price">{{ item.unit_price|floatformat:0|intcomma }}원</span>

@@ -3,7 +3,7 @@ from typing import Any
 from django.conf import settings
 from django.db import models
 
-from products.models import Color
+from products.models import Color, Size
 
 
 class Order(models.Model):
@@ -35,9 +35,9 @@ class Order(models.Model):
 
     class ExchangeRefundRequestStatus(models.TextChoices):
         NONE = "NONE", "없음"
-        PENDING = "PENDING", "교환/환불요청"
-        APPROVED = "APPROVED", "교환/환불승인"
-        REJECTED = "REJECTED", "교환/환불거부"
+        PENDING = "PENDING", "교환/반품요청"
+        APPROVED = "APPROVED", "교환/반품승인"
+        REJECTED = "REJECTED", "교환/반품거부"
     
     class ExchangeRefundType(models.TextChoices):
         EXCHANGE = "EXCHANGE", "교환"
@@ -67,11 +67,11 @@ class Order(models.Model):
     cancellation_processed_at = models.DateTimeField(null=True, blank=True, verbose_name="취소 처리 시간")
     cancellation_admin_note = models.TextField(null=True, blank=True, verbose_name="관리자 메모")
     
-    exchange_refund_request_status = models.CharField(max_length=20, choices=ExchangeRefundRequestStatus.choices, default=ExchangeRefundRequestStatus.NONE, verbose_name="교환/환불 요청 상태")
-    exchange_refund_type = models.CharField(max_length=20, choices=ExchangeRefundType.choices, null=True, blank=True, verbose_name="교환/환불 유형")
-    exchange_refund_reason = models.CharField(max_length=50, choices=ExchangeRefundReason.choices, null=True, blank=True, verbose_name="교환/환불 사유")
-    exchange_refund_requested_at = models.DateTimeField(null=True, blank=True, verbose_name="교환/환불 요청 시간")
-    exchange_refund_processed_at = models.DateTimeField(null=True, blank=True, verbose_name="교환/환불 처리 시간")
+    exchange_refund_request_status = models.CharField(max_length=20, choices=ExchangeRefundRequestStatus.choices, default=ExchangeRefundRequestStatus.NONE, verbose_name="교환/반품 요청 상태")
+    exchange_refund_type = models.CharField(max_length=20, choices=ExchangeRefundType.choices, null=True, blank=True, verbose_name="교환/반품 유형")
+    exchange_refund_reason = models.CharField(max_length=50, choices=ExchangeRefundReason.choices, null=True, blank=True, verbose_name="교환/반품 사유")
+    exchange_refund_requested_at = models.DateTimeField(null=True, blank=True, verbose_name="교환/반품 요청 시간")
+    exchange_refund_processed_at = models.DateTimeField(null=True, blank=True, verbose_name="교환/반품 처리 시간")
     exchange_refund_admin_note = models.TextField(null=True, blank=True, verbose_name="관리자 메모")
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -90,7 +90,7 @@ class OrderItem(models.Model):
     unit_price = models.PositiveIntegerField()
     subtotal = models.PositiveIntegerField()
     color = models.ForeignKey(Color, on_delete=models.SET_NULL, null=True, blank=True)
-
+    size = models.ForeignKey(Size, on_delete=models.SET_NULL, null=True, blank=True)    
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args: Any, **kwargs: Any) -> None:

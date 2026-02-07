@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{% static 'css/admin/product_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/admin/order_list.css' %}">
 <link rel="stylesheet" href="{% static 'css/admin/cancellation_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin/exchange_refund_list.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -18,27 +19,58 @@
                 <h1 class="admin-title">취소 요청 관리</h1>
             </div>
 
-            <div class="order-list">
+            <div class="exchange-refund-stats-section">
+                <div class="section-header">
+                    <h3>취소 현황</h3>
+                </div>
+                <div class="exchange-refund-stats">
+                    <a href="?status=PENDING{% if q %}&q={{ q|urlencode }}{% endif %}" class="stat-card stat-pending {% if status == 'PENDING' %}active{% endif %}">
+                        <span class="stat-number">{{ cancellation_stats.pending }}</span>
+                        <span class="stat-label">대기중</span>
+                    </a>
+                    <a href="?status=APPROVED{% if q %}&q={{ q|urlencode }}{% endif %}" class="stat-card stat-approved {% if status == 'APPROVED' %}active{% endif %}">
+                        <span class="stat-number">{{ cancellation_stats.approved }}</span>
+                        <span class="stat-label">승인</span>
+                    </a>
+                    <a href="?status=REJECTED{% if q %}&q={{ q|urlencode }}{% endif %}" class="stat-card stat-rejected {% if status == 'REJECTED' %}active{% endif %}">
+                        <span class="stat-number">{{ cancellation_stats.rejected }}</span>
+                        <span class="stat-label">거부</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="order-list cancellation-list">
                 <div class="list-header">
                     <div class="list-info">
-                        <span>총 {{ page_obj.paginator.count }}건의 취소 요청</span>
+                        <span>총 {{ page_obj.paginator.count }}건</span>
+                        {% if status %}<span class="filter-badge">필터: {% if status == "PENDING" %}대기중{% elif status == "APPROVED" %}승인{% else %}거부{% endif %}</span>{% endif %}
                     </div>
                     <div class="list-actions">
                         <form method="get" class="order-list-search">
                             <select name="status" class="filter-select">
                                 <option value="">전체 상태</option>
-                                <option value="PENDING" {% if status == "PENDING" %}selected{% endif %}>취소요청</option>
-                                <option value="APPROVED" {% if status == "APPROVED" %}selected{% endif %}>취소승인</option>
-                                <option value="REJECTED" {% if status == "REJECTED" %}selected{% endif %}>취소거부</option>
+                                <option value="PENDING" {% if status == "PENDING" %}selected{% endif %}>대기중</option>
+                                <option value="APPROVED" {% if status == "APPROVED" %}selected{% endif %}>승인</option>
+                                <option value="REJECTED" {% if status == "REJECTED" %}selected{% endif %}>거부</option>
                             </select>
-                            <input type="text" name="q" value="{{ q }}" placeholder="주문번호/이메일/상품명 검색" class="filter-select order-list-search-input">
+                            <input type="text" name="q" value="{{ q }}" placeholder="주문번호·이메일·상품명 검색" class="filter-select order-list-search-input">
                             <button type="submit" class="btn btn-sm btn-secondary">검색</button>
                         </form>
                     </div>
                 </div>
 
                 <div class="order-list-body">
-                    <table class="order-table">
+                    <table class="order-table cancellation-table">
+                        <colgroup>
+                            <col class="col-order-id">
+                            <col class="col-customer">
+                            <col class="col-items">
+                            <col class="col-amount">
+                            <col class="col-date">
+                            <col class="col-reason">
+                            <col class="col-status">
+                            <col class="col-action">
+                        </colgroup>
                         <thead>
                             <tr>
                                 <th>주문번호</th>
@@ -54,8 +86,8 @@
                         <tbody>
                             {% for order in orders %}
                             {% with items_count=order.items.all|length %}
-                            <tr class="order-row">
-                                <td class="order-id">{{ order.order_id }}</td>
+                            <tr class="order-row order-row-clickable" data-order-number="{{ order.order_id }}">
+                                <td class="order-id-cell"><span class="order-id" title="{{ order.order_id }}">{{ order.order_id }}</span></td>
                                 <td class="customer-cell">
                                     <div class="customer-info">
                                         <div class="customer-email">{{ order.user.email }}</div>
@@ -77,27 +109,27 @@
                                 <td class="order-date-cell">
                                     <div class="order-date">{{ order.cancellation_requested_at|date:"Y-m-d H:i" }}</div>
                                 </td>
-                                <td class="cancellation-reason-cell">
+                                <td class="reason-cell">
                                     {% if order.cancellation_reason %}
-                                    <div class="cancellation-reason">{{ order.get_cancellation_reason_display }}</div>
+                                    <span class="reason-text" title="{{ order.get_cancellation_reason_display }}">{{ order.get_cancellation_reason_display }}</span>
                                     {% else %}
-                                    <div class="cancellation-reason">-</div>
+                                    <span class="cell-dash">-</span>
                                     {% endif %}
                                 </td>
-                                <td class="cancellation-status-cell">
+                                <td class="status-text-cell">
                                     {% if order.cancellation_request_status == "APPROVED" %}
-                                        <span class="cancellation-status-badge status-approved">취소승인</span>
+                                        취소승인
                                     {% elif order.cancellation_request_status == "REJECTED" %}
-                                        <span class="cancellation-status-badge status-rejected">취소거부</span>
+                                        취소거부
                                     {% else %}
-                                        <span class="cancellation-status-badge status-pending">취소요청</span>
+                                        취소요청
                                     {% endif %}
                                 </td>
                                 <td class="cancellation-action-cell">
                                     {% if order.cancellation_request_status == "PENDING" %}
-                                    <div class="cancellation-actions">
-                                        <button type="button" class="btn btn-sm btn-success" onclick="showApprovalModal({{ order.id }}, '{{ order.order_id }}')">승인</button>
-                                        <button type="button" class="btn btn-sm btn-danger" onclick="showRejectModal({{ order.id }}, '{{ order.order_id }}')">거부</button>
+                                    <div class="cancellation-actions exchange-refund-actions" data-no-row-click>
+                                        <button type="button" class="btn btn-xs btn-success" onclick="event.stopPropagation(); showApprovalModal({{ order.id }}, '{{ order.order_id }}')">승인</button>
+                                        <button type="button" class="btn btn-xs btn-danger" onclick="event.stopPropagation(); showRejectModal({{ order.id }}, '{{ order.order_id }}')">거부</button>
                                     </div>
                                     {% else %}
                                     <div class="cancellation-processed-info">
@@ -107,6 +139,7 @@
                                         <div class="processed-date">{{ order.cancellation_processed_at|date:"Y-m-d H:i" }}</div>
                                     </div>
                                     {% endif %}
+                                    <div class="admin-memo-content" style="display:none">{% if order.cancellation_admin_note %}{{ order.cancellation_admin_note }}{% endif %}</div>
                                 </td>
                             </tr>
                             {% endwith %}
@@ -182,6 +215,25 @@
                 <button type="submit" class="btn btn-danger">거부</button>
             </div>
         </form>
+    </div>
+</div>
+
+<div id="adminMemoModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>관리자 메모</h3>
+            <span class="close" onclick="closeModal('adminMemoModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>주문번호: <strong id="adminMemoOrderNumber"></strong></p>
+            <div class="form-group">
+                <label>관리자 메모</label>
+                <div id="adminMemoContent" class="admin-memo-display"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('adminMemoModal')">닫기</button>
+        </div>
     </div>
 </div>
 {% endblock %}

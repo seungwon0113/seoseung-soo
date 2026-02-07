@@ -10,8 +10,9 @@ from django.utils import timezone
 
 from carts.models import Cart
 from orders.models import Order, OrderItem
+from orders.services.order_services import OrderService
 from payments.models import Payment, PaymentLog
-from products.models import Color
+from products.models import Color, Size
 
 TOSS_API_BASE = os.getenv("TOSS_API_BASE")
 
@@ -47,17 +48,24 @@ class TossPaymentService:
         return 0 if amount >= 50000 else 3000
 
     @staticmethod
+    def _calculate_final_amount(order_total: int, used_point: int = 0) -> int:
+        used_point_value = max(0, int(used_point))
+        amount_after_point = max(0, order_total - used_point_value)
+        shipping_fee = TossPaymentService.calculate_shipping_fee(order_total)
+        return amount_after_point + shipping_fee
+
+    @staticmethod
     def prepare_payment_request(
         pre_order_key: str,
         cache_data: Dict[str, Any],
-        base_url: str
+        base_url: str,
+        used_point: int = 0,
     ) -> Tuple[str, str, int, Dict[str, Any]]:
         order_id = TossPaymentService.generate_order_id()
         items_data = cache_data.get("items", [])
         order_name = TossPaymentService.generate_order_name(items_data)
-        amount = cache_data.get("amount", 0)
-        shipping_fee = TossPaymentService.calculate_shipping_fee(amount)
-        final_amount = amount + shipping_fee
+        order_total = int(cache_data.get("amount", 0))
+        final_amount = TossPaymentService._calculate_final_amount(order_total, used_point)
 
         success_url = f"{base_url}/payments/toss/success/?preOrderKey={pre_order_key}"
         fail_url = f"{base_url}/payments/toss/fail/?preOrderKey={pre_order_key}"
@@ -116,9 +124,9 @@ class TossPaymentService:
 
     @staticmethod
     def validate_payment_amount(cache_data: Dict[str, Any], amount: int) -> Tuple[bool, str]:
-        expected_amount = int(cache_data.get("amount", 0))
-        shipping_fee = TossPaymentService.calculate_shipping_fee(expected_amount)
-        expected_final_amount = expected_amount + shipping_fee
+        order_total = int(cache_data.get("amount", 0))
+        used_point = int(cache_data.get("used_point", 0)) or 0
+        expected_final_amount = TossPaymentService._calculate_final_amount(order_total, used_point)
 
         if expected_final_amount != amount:
             return False, "결제 금액이 주문 정보와 일치하지 않습니다."
@@ -131,14 +139,17 @@ class TossPaymentService:
         items_data: List[Dict[str, Any]],
         amount: int,
         payment_key: str,
-        payment_data: Dict[str, Any],
-        request_url: str,
-        request_payload: Dict[str, Any],
-        response_status_code: int,
         used_point: int = 0,
+        payment_method: str = "CARD",
+        payment_data: Dict[str, Any] | None = None,
+        request_url: str | None = None,
+        request_payload: Dict[str, Any] | None = None,
+        response_status_code: int | None = None,
     ) -> None:
+
         user = get_user_model().objects.get(id=user_id)
         order_name = TossPaymentService.generate_order_name(items_data)
+        payment_data = payment_data or {}
 
         metadata_used_point = 0
         metadata = payment_data.get("metadata")
@@ -157,16 +168,16 @@ class TossPaymentService:
                 status="PENDING",
             )
 
-            color_ids = [item["color_id"] for item in items_data if item.get("color_id")]
-            colors_map = {color.id: color for color in Color.objects.filter(id__in=color_ids)} if color_ids else {}
+            colors_map = OrderService.get_options_map(items_data, "color_id", Color)
+            sizes_map = OrderService.get_options_map(items_data, "size_id", Size)
 
             order_items = []
             for item_data in items_data:
                 color_id = item_data.get("color_id")
-                color = None
-                if color_id and isinstance(color_id, int):
-                    color = colors_map.get(color_id)
-                
+                size_id = item_data.get("size_id")
+                color = colors_map.get(color_id) if color_id and isinstance(color_id, int) else None
+                size = sizes_map.get(size_id) if size_id and isinstance(size_id, int) else None
+
                 order_items.append(
                     OrderItem(
                         order=order,
@@ -176,6 +187,7 @@ class TossPaymentService:
                         unit_price=item_data["unit_price"],
                         subtotal=item_data["quantity"] * item_data["unit_price"],
                         color=color,
+                        size=size,
                     )
                 )
             OrderItem.objects.bulk_create(order_items)
@@ -183,26 +195,27 @@ class TossPaymentService:
             payment = Payment.objects.create(
                 order=order,
                 provider="toss",
-                method=payment_data.get("method", "CARD"),
+                method=payment_data.get("method", payment_method),
                 payment_key=str(payment_key),
                 amount=amount,
                 receipt_url=payment_data.get("receipt", {}).get("url", ""),
                 status="REQUESTED",
                 used_point=used_point_value,
-                raw_response=payment_data,
+                raw_response=payment_data if payment_data else {"point_only": True},
             )
 
             payment.approve()
 
-            PaymentLog.objects.create(
-                provider="toss",
-                event_type="CONFIRM",
-                request_url=request_url,
-                request_payload=request_payload,
-                response_payload=payment_data,
-                status_code=response_status_code,
-                payment=payment,
-            )
+            if request_url and request_payload is not None and response_status_code is not None:
+                PaymentLog.objects.create(
+                    provider="toss",
+                    event_type="CONFIRM",
+                    request_url=request_url,
+                    request_payload=request_payload,
+                    response_payload=payment_data,
+                    status_code=response_status_code,
+                    payment=payment,
+                )
 
             TossPaymentService.clear_cart_after_payment(user_id, items_data)
 
@@ -217,11 +230,11 @@ class TossPaymentService:
         all_cart_items = Cart.objects.filter(
             user=user,
             product_id__in=product_ids
-        ).select_related('color').order_by('id')
+        ).select_related('color', 'size').order_by('id')
 
-        cart_items_by_key: Dict[tuple[int, int | None], List[Cart]] = {}
+        cart_items_by_key: Dict[tuple[int, int | None, int | None], List[Cart]] = {}
         for cart_item in all_cart_items:
-            key = (cart_item.product_id, cart_item.color_id)
+            key = (cart_item.product_id, cart_item.color_id, cart_item.size_id)
             if key not in cart_items_by_key:
                 cart_items_by_key[key] = []
             cart_items_by_key[key].append(cart_item)
@@ -232,12 +245,13 @@ class TossPaymentService:
         for item_data in items_data:
             product_id = item_data.get("product_id")
             color_id = item_data.get("color_id")
+            size_id = item_data.get("size_id")
             order_quantity = item_data.get("quantity", 1)
 
             if product_id is None:
                 continue
 
-            key = (product_id, color_id)
+            key = (product_id, color_id, size_id)
             cart_items = cart_items_by_key.get(key, [])
 
             if not cart_items:

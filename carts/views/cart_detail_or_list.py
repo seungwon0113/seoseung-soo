@@ -14,7 +14,7 @@ from users.models import User
 class CartDetailView(LoginRequiredMixin, View):
     def get(self, request: HttpRequest) -> HttpResponse:
         user = cast(User, request.user)
-        cart_items = Cart.objects.filter(user=user).select_related('product', 'color')
+        cart_items = Cart.objects.filter(user=user).select_related('product', 'color', 'size')
         
         total_price = cart_items.aggregate(
             total=Sum(

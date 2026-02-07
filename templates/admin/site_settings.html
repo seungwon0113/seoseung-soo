@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}메인 페이지 설정{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/users/admin/admin_mypage.css' %}">
+<style>
+    .site-settings-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .settings-header {
+        margin-bottom: 32px;
+    }
+
+    .settings-header h2 {
+        font-size: 22px;
+        font-weight: 600;
+        color: #1b1b1b;
+        margin: 0 0 8px 0;
+    }
+
+    .settings-header p {
+        color: #666;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .settings-form {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+    }
+
+    .form-section {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        padding: 24px;
+    }
+
+    .form-section h3 {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1b1b1b;
+        margin: 0 0 20px 0;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .image-preview-area {
+        width: 100%;
+        aspect-ratio: 16 / 6;
+        background: #f5f5f5;
+        border: 2px dashed #d1d5db;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin-bottom: 16px;
+        position: relative;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+    }
+
+    .image-preview-area:hover {
+        border-color: #1b1b1b;
+    }
+
+    .image-preview-area img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .image-placeholder {
+        text-align: center;
+        color: #9ca3af;
+    }
+
+    .image-placeholder svg {
+        display: block;
+        margin: 0 auto 8px;
+    }
+
+    .image-placeholder p {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .image-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .file-input-wrapper {
+        position: relative;
+    }
+
+    .file-input-wrapper input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .file-select-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 20px;
+        background: #1b1b1b;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .file-select-btn:hover {
+        background: #333;
+    }
+
+    .file-name {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .form-group input[type="text"] {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e5e7eb;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .form-group input[type="text"]:focus {
+        border-color: #1b1b1b;
+    }
+
+    .form-group .help-text {
+        font-size: 12px;
+        color: #9ca3af;
+        margin-top: 6px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .btn-save {
+        padding: 12px 32px;
+        background: #1b1b1b;
+        color: #fff;
+        border: none;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .btn-save:hover {
+        background: #333;
+    }
+
+    .btn-back {
+        padding: 12px 32px;
+        background: #fff;
+        color: #1b1b1b;
+        border: 1px solid #e5e7eb;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        transition: border-color 0.2s ease;
+    }
+
+    .btn-back:hover {
+        border-color: #1b1b1b;
+    }
+
+    @media (max-width: 768px) {
+        .site-settings-container {
+            padding: 20px 16px;
+        }
+
+        .form-section {
+            padding: 16px;
+        }
+
+        .image-preview-area {
+            aspect-ratio: 16 / 9;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="site-settings-container">
+    <div class="settings-header">
+        <h2>메인 페이지 설정</h2>
+        <p>메인 페이지의 Hero 이미지와 텍스트를 관리합니다.</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="settings-form">
+        {% csrf_token %}
+
+        <div class="form-section">
+            <h3>Hero 이미지</h3>
+            <div class="image-preview-area" id="imagePreview" onclick="document.getElementById('heroImageInput').click()">
+                {% if setting.hero_image %}
+                    <img src="{{ setting.hero_image.url }}" alt="Hero 이미지" id="previewImg">
+                {% else %}
+                    <div class="image-placeholder" id="placeholder">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <p>클릭하여 이미지를 업로드하세요</p>
+                        <p style="font-size: 12px; margin-top: 4px;">권장 크기: 1920 x 600px</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="image-actions">
+                <div class="file-input-wrapper">
+                    <span class="file-select-btn">이미지 선택</span>
+                    <input type="file" name="hero_image" id="heroImageInput" accept="image/*">
+                </div>
+                <span class="file-name" id="fileName">
+                    {% if setting.hero_image %}현재 이미지가 설정되어 있습니다{% else %}선택된 파일 없음{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Hero 텍스트</h3>
+            <div class="form-group">
+                <label for="hero_title">타이틀</label>
+                <input type="text" name="hero_title" id="hero_title" value="{{ setting.hero_title }}" placeholder="New Season">
+                <p class="help-text">메인 이미지 위에 표시되는 큰 제목입니다.</p>
+            </div>
+            <div class="form-group">
+                <label for="hero_subtitle">서브타이틀</label>
+                <input type="text" name="hero_subtitle" id="hero_subtitle" value="{{ setting.hero_subtitle }}" placeholder="가장 사랑받는 아이템을 만나보세요.">
+                <p class="help-text">타이틀 아래에 표시되는 설명 문구입니다.</p>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{% url 'admin-mypage' %}" class="btn-back">돌아가기</a>
+            <button type="submit" class="btn-save">저장하기</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const heroImageInput = document.getElementById('heroImageInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const fileName = document.getElementById('fileName');
+
+    heroImageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            fileName.textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.innerHTML = `<img src="${e.target.result}" alt="미리보기" id="previewImg">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+{% endblock %}

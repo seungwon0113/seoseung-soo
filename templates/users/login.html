@@ -14,8 +14,11 @@
           <h1 class="login-title">로그인</h1>
         </header>
 
-        <form id="loginForm" method="post" action="{% url 'login' %}" novalidate class="login-form">
+        <form id="loginForm" method="post" action="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" novalidate class="login-form">
           {% csrf_token %}
+          {% if next %}
+          <input type="hidden" name="next" value="{{ next }}">
+          {% endif %}
 
           <div class="form-group">
             <input

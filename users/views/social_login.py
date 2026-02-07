@@ -48,8 +48,7 @@ class GoogleLoginView(View):
                 # 사용자 로그인
                 login(request, user, backend="django.contrib.auth.backends.ModelBackend")
                 
-                # 안전한 리다이렉트 URL 결정 (오픈 리디렉션 취약점 방지)
-                next_url = request.GET.get('next', '/')
+                next_url = request.GET.get('next') or request.session.pop('login_next', '/')
                 if not url_has_allowed_host_and_scheme(
                     url=next_url,
                     allowed_hosts={request.get_host()},
@@ -129,7 +128,15 @@ class NaverCallbackView(View):
             return redirect("login")
 
         login(request, user)
-        return redirect("home")
+
+        next_url = request.session.pop("login_next", "/")
+        if not url_has_allowed_host_and_scheme(
+            url=next_url,
+            allowed_hosts={request.get_host()},
+            require_https=request.is_secure()
+            ):
+            next_url = '/'
+        return redirect(next_url)
 
 class AppleLoginView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
@@ -163,4 +170,10 @@ class AppleCallbackView(View):
 
         login(request, user)
 
-        return redirect("/")
+        next_url = request.session.pop("login_next", "/")
+        if not url_has_allowed_host_and_scheme(
+            url=next_url,
+            allowed_hosts={request.get_host()},
+            require_https=request.is_secure()):
+            next_url = '/'
+        return redirect(next_url)

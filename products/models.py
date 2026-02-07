@@ -18,6 +18,11 @@ class ProductImage(BaseModel):
     class Meta:
         db_table = 'products_image'
 
+class Size(models.Model):
+    name = models.CharField(max_length=50)
+    class Meta:
+        db_table = 'products_size'
+
 class Color(models.Model):
     name = models.CharField(max_length=50)
     hex_code = models.CharField(max_length=7, blank=True, null=True)  # 예: #ff0000 (선택적)
@@ -37,6 +42,7 @@ class Product(BaseModel):
     is_sold = models.BooleanField(default=False)
     categories = models.ManyToManyField(Category, blank=True, db_table='product_category_cdt')
     colors = models.ManyToManyField(Color, blank=True, db_table='product_color_cdt')
+    sizes = models.ManyToManyField(Size, blank=True, db_table='product_size_cdt')
     
     class Meta:
         db_table = 'products'

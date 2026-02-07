@@ -27,7 +27,7 @@ class MultipleFileField(forms.FileField):
 class ProductForm(forms.ModelForm):  # type: ignore[type-arg]
     class Meta:
         model = Product
-        fields = ['name', 'description', 'price', 'sale_price', 'stock', 'is_live', 'is_sold' , 'categories', 'colors']
+        fields = ['name', 'description', 'price', 'sale_price', 'stock', 'is_live', 'is_sold', 'categories', 'colors', 'sizes']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-input',
@@ -65,6 +65,9 @@ class ProductForm(forms.ModelForm):  # type: ignore[type-arg]
                 'class': 'form-checkbox-multiple'
             }),
             'colors': forms.SelectMultiple(attrs={
+                'class': 'form-select-multiple'
+            }),
+            'sizes': forms.SelectMultiple(attrs={
                 'class': 'form-select-multiple'
             })
         }

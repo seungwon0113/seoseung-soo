@@ -16,7 +16,7 @@
                 <li><a href="{% url 'orders:admin-order-list' %}" class="{% if request.resolver_match.url_name == 'admin-order-list' %}active{% endif %}">주문 목록</a></li>
                         <li><a href="{% url 'orders:admin-shipping-management' %}" class="{% if request.resolver_match.url_name == 'admin-shipping-management' %}active{% endif %}">배송 관리</a></li>
                         <li><a href="{% url 'orders:admin-cancellation-list' %}" class="{% if request.resolver_match.url_name == 'admin-cancellation-list' %}active{% endif %}">취소 관리</a></li>
-                        <li><a href="{% url 'orders:admin-exchange-refund-list' %}" class="{% if request.resolver_match.url_name == 'admin-exchange-refund-list' %}active{% endif %}">교환/환불 관리</a></li>
+                        <li><a href="{% url 'orders:admin-exchange-refund-list' %}" class="{% if request.resolver_match.url_name == 'admin-exchange-refund-list' %}active{% endif %}">교환/반품 관리</a></li>
             </ul>
         </div>
         <div class="menu-category">
@@ -28,9 +28,10 @@
             </ul>
         </div>
         <div class="menu-category">
-            <h4>색상 관리</h4>
+            <h4>색상/사이즈 관리</h4>
             <ul>
                 <li><a href="{% url 'admin-product-color' %}" class="{% if request.resolver_match.url_name == 'admin-product-color' %}active{% endif %}">색상 관리</a></li>
+                <li><a href="{% url 'admin-product-size' %}" class="{% if request.resolver_match.url_name == 'admin-product-size' %}active{% endif %}">사이즈 관리</a></li>
             </ul>
         </div>
     </div>

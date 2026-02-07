@@ -1,13 +1,15 @@
 import uuid
 from decimal import Decimal
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, TypeVar
 
-from django.db.models import Count, Q, QuerySet
+from django.db.models import Count, Model, Q, QuerySet
 from django.utils import timezone
 
 from config.utils.cache_helper import CacheHelper
 from orders.models import Order
-from products.models import Color, Product
+from products.models import Color, Product, Size
+
+T = TypeVar("T", bound=Model)
 
 
 class OrderService:
@@ -17,7 +19,7 @@ class OrderService:
 
     @staticmethod
     def validate_products(product_ids: List[int]) -> Tuple[bool, str, Dict[int, Product]]:
-        products = Product.objects.filter(id__in=product_ids).prefetch_related('colors')
+        products = Product.objects.filter(id__in=product_ids).prefetch_related('colors', 'sizes')
         product_map = {p.id: p for p in products}
 
         if len(product_ids) != len(product_map):
@@ -26,14 +28,39 @@ class OrderService:
         return True, "", product_map
 
     @staticmethod
-    def validate_color(color_id: int, product: Product) -> Tuple[bool, str]:
-        if not Color.objects.filter(id=color_id).exists():
-            return False, "존재하지 않는 색상입니다."
+    def _validate_option(
+        option_id: int,
+        product: Product,
+        model: type[T],
+        product_relation_name: str,
+        option_name: str,
+        option_name_subject: str,
+    ) -> Tuple[bool, str]:
+        if not model.objects.filter(id=option_id).exists():  # type: ignore[attr-defined]
+            return False, f"존재하지 않는 {option_name}입니다."
 
-        if not product.colors.filter(id=color_id).exists():
-            return False, f"'{product.name}' 상품에 선택하신 색상이 존재하지 않습니다."
+        product_relation = getattr(product, product_relation_name)
+        if not product_relation.filter(id=option_id).exists():
+            return False, f"'{product.name}' 상품에 선택하신 {option_name_subject} 존재하지 않습니다."
 
         return True, ""
+
+    @staticmethod
+    def validate_color(color_id: int, product: Product) -> Tuple[bool, str]:
+        return OrderService._validate_option(color_id, product, Color, "colors", "색상", "색상이")
+
+    @staticmethod
+    def validate_size(size_id: int, product: Product) -> Tuple[bool, str]:
+        return OrderService._validate_option(size_id, product, Size, "sizes", "사이즈", "사이즈가")
+
+    @staticmethod
+    def get_options_map(
+        items: List[Dict[str, Any]], option_key: str, model: type[T]
+    ) -> Dict[int, T]:
+        option_ids = [item[option_key] for item in items if item.get(option_key)]
+        if not option_ids:
+            return {}
+        return {obj.id: obj for obj in model.objects.filter(id__in=option_ids)}  # type: ignore[attr-defined]
 
     @staticmethod
     def calculate_item_price(product: Product) -> Decimal:
@@ -61,9 +88,15 @@ class OrderService:
             product_id = item["product_id"]
             product = product_map[product_id]
             color_id = item.get("color_id")
+            size_id = item.get("size_id")
 
             if color_id:
                 is_valid, error_message = OrderService.validate_color(color_id, product)
+                if not is_valid:
+                    return False, error_message, [], Decimal("0.0")
+
+            if size_id:
+                is_valid, error_message = OrderService.validate_size(size_id, product)
                 if not is_valid:
                     return False, error_message, [], Decimal("0.0")
 
@@ -78,6 +111,7 @@ class OrderService:
                 "quantity": quantity,
                 "unit_price": int(price),
                 "color_id": color_id,
+                "size_id": size_id,
             })
 
         return True, "", validated_items, total_amount

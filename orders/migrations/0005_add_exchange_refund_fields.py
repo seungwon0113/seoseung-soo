@@ -18,26 +18,26 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='order',
             name='exchange_refund_processed_at',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='교환/환불 처리 시간'),
+            field=models.DateTimeField(blank=True, null=True, verbose_name='교환/반품 처리 시간'),
         ),
         migrations.AddField(
             model_name='order',
             name='exchange_refund_reason',
-            field=models.CharField(blank=True, choices=[('SIZE_MISMATCH', '사이즈가 안 맞아요'), ('NOT_LIKE_COLOR', '색상이 마음에 안 들어요'), ('NOT_LIKE_DESIGN', '디자인이 마음에 안 들어요'), ('WRONG_PRODUCT', '다른 상품이 왔어요'), ('DEFECTIVE', '제품 불량이에요'), ('WRONG_DELIVERY', '배송 오류'), ('OTHER', '기타')], max_length=50, null=True, verbose_name='교환/환불 사유'),
+            field=models.CharField(blank=True, choices=[('SIZE_MISMATCH', '사이즈가 안 맞아요'), ('NOT_LIKE_COLOR', '색상이 마음에 안 들어요'), ('NOT_LIKE_DESIGN', '디자인이 마음에 안 들어요'), ('WRONG_PRODUCT', '다른 상품이 왔어요'), ('DEFECTIVE', '제품 불량이에요'), ('WRONG_DELIVERY', '배송 오류'), ('OTHER', '기타')], max_length=50, null=True, verbose_name='교환/반품 사유'),
         ),
         migrations.AddField(
             model_name='order',
             name='exchange_refund_request_status',
-            field=models.CharField(choices=[('NONE', '없음'), ('PENDING', '교환/환불요청'), ('APPROVED', '교환/환불승인'), ('REJECTED', '교환/환불거부')], default='NONE', max_length=20, verbose_name='교환/환불 요청 상태'),
+            field=models.CharField(choices=[('NONE', '없음'), ('PENDING', '교환/반품요청'), ('APPROVED', '교환/반품승인'), ('REJECTED', '교환/반품거부')], default='NONE', max_length=20, verbose_name='교환/반품 요청 상태'),
         ),
         migrations.AddField(
             model_name='order',
             name='exchange_refund_requested_at',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='교환/환불 요청 시간'),
+            field=models.DateTimeField(blank=True, null=True, verbose_name='교환/반품 요청 시간'),
         ),
         migrations.AddField(
             model_name='order',
             name='exchange_refund_type',
-            field=models.CharField(blank=True, choices=[('EXCHANGE', '교환'), ('REFUND', '환불')], max_length=20, null=True, verbose_name='교환/환불 유형'),
+            field=models.CharField(blank=True, choices=[('EXCHANGE', '교환'), ('REFUND', '환불')], max_length=20, null=True, verbose_name='교환/반품 유형'),
         ),
     ]

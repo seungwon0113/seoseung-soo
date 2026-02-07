@@ -2,6 +2,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePaymentPage();
 });
 
+window.selectedPaymentMethod = 'card';
+
+window.usedPoints = 0;
+
 function initializePaymentPage() {
     setupPaymentMethodSelection();
     setupCouponApplication();
@@ -10,46 +14,46 @@ function initializePaymentPage() {
     setupDiscountSelection();
     setupDropdownCloseOnOutsideClick();
     setupTossPayment();
+    setupPointUsage();
 }
 
 function setupPaymentMethodSelection() {
-    const paymentMethods = document.querySelectorAll('.payment-method');
+    const paymentMethodOptions = document.querySelectorAll('.payment-method-option');
+    const virtualAccountSection = document.getElementById('virtualAccountSection');
+    const paymentButton = document.getElementById('tossPaymentBtn');
     
-    paymentMethods.forEach(method => {
-        method.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
+    paymentMethodOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
             const radio = this.querySelector('input[type="radio"]');
-            const dropdownContainer = document.querySelector('.card-dropdown-container');
+            const method = this.getAttribute('data-method');
             
-            if (radio.value === 'card' && this.classList.contains('selected')) {
-                if (dropdownContainer) {
-                    const isShowing = dropdownContainer.classList.contains('show');
-                    setTimeout(() => {
-                        dropdownContainer.classList.toggle('show');
-                    }, 10);
-                }
-                return;
-            }
-            
-            paymentMethods.forEach(m => {
-                m.classList.remove('selected');
-            });
-            
-            if (dropdownContainer) {
-                dropdownContainer.classList.remove('show');
-            }
+            paymentMethodOptions.forEach(opt => opt.classList.remove('selected'));
             
             this.classList.add('selected');
             radio.checked = true;
             
-            if (radio.value === 'card' && dropdownContainer) {
-                setTimeout(() => {
-                    dropdownContainer.classList.add('show');
-                }, 50);
+            window.selectedPaymentMethod = method;
+            
+            if (virtualAccountSection) {
+                if (method === 'virtual') {
+                    virtualAccountSection.style.display = 'block';
+                } else {
+                    virtualAccountSection.style.display = 'none';
+                }
             }
             
+            if (paymentButton) {
+                const amount = paymentButton.getAttribute('data-amount');
+                const formattedAmount = parseInt(amount).toLocaleString();
+                const paymentText = paymentButton.querySelector('.payment-text');
+                if (paymentText) {
+                    if (method === 'virtual') {
+                        paymentText.textContent = `${formattedAmount}원 가상계좌 발급`;
+                    } else {
+                        paymentText.textContent = `${formattedAmount}원 결제하기`;
+                    }
+                }
+            }
         });
     });
     
@@ -69,7 +73,9 @@ function setupCardOptionSelection() {
             window.selectedCardType = cardType;
             
             const dropdown = this.closest('.card-dropdown');
-            dropdown.classList.remove('show');
+            if (dropdown) {
+                dropdown.classList.remove('show');
+            }
             
             updateSelectedCardDisplay(cardName);
         });
@@ -167,19 +173,43 @@ function setupAddressSearch() {
 }
 
 function openAddressSearch() {
-    const sampleAddress = {
-        zipcode: '12345',
-        address: '서울특별시 강남구 테헤란로 123',
-        detail: ''
-    };
-    
+    if (typeof daum === 'undefined' || !daum.Postcode) {
+        alert('우편번호 서비스를 불러올 수 없습니다. 페이지를 새로고침 후 다시 시도해주세요.');
+        return;
+    }
+
     const zipcodeInput = document.querySelector('.postal-code-input');
     const addressInput = document.querySelector('.address-input');
-    
-    if (zipcodeInput) zipcodeInput.value = sampleAddress.zipcode;
-    if (addressInput) addressInput.value = sampleAddress.address;
-    
-    showSuccessMessage('주소가 입력되었습니다.');
+    const detailInput = document.querySelector('.detail-address-input');
+
+    new daum.Postcode({
+        oncomplete: function(data) {
+            var addr = '';
+            var extraAddr = '';
+
+            if (data.userSelectedType === 'R') {
+                addr = data.roadAddress;
+                if (data.bname !== '' && /(동|로|가)$/.test(data.bname)) {
+                    extraAddr += data.bname;
+                }
+                if (data.buildingName !== '' && data.apartment === 'Y') {
+                    extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                }
+                if (extraAddr !== '') {
+                    extraAddr = ' (' + extraAddr + ')';
+                }
+            } else {
+                addr = data.jibunAddress;
+            }
+
+            if (zipcodeInput) zipcodeInput.value = data.zonecode;
+            if (addressInput) addressInput.value = addr + extraAddr;
+            if (detailInput) {
+                detailInput.value = '';
+                detailInput.focus();
+            }
+        }
+    }).open();
 }
 
 function setupFormValidation() {
@@ -204,6 +234,79 @@ function setupDiscountSelection() {
         discountSelect.addEventListener('change', function() {
             calculateTotalAmount();
         });
+    }
+}
+
+function setupPointUsage() {
+    const pointInput = document.getElementById('pointInput');
+    const useAllPointsBtn = document.getElementById('useAllPointsBtn');
+    
+    if (!pointInput) return;
+
+    const maxPoint = parseInt(pointInput.getAttribute('data-max-point')) || 0;
+    const originalFinalAmount = parseInt(pointInput.getAttribute('data-final-amount')) || 0;
+
+    pointInput.addEventListener('input', function() {
+        let value = parseInt(this.value) || 0;
+        
+        if (value < 0) value = 0;
+        
+        if (value > maxPoint) value = maxPoint;
+        
+        if (value > originalFinalAmount) value = originalFinalAmount;
+        
+        this.value = value;
+        window.usedPoints = value;
+        
+        updatePaymentAmount();
+    });
+
+    if (useAllPointsBtn) {
+        useAllPointsBtn.addEventListener('click', function() {
+            const useAmount = Math.min(maxPoint, originalFinalAmount);
+            pointInput.value = useAmount;
+            window.usedPoints = useAmount;
+            
+            updatePaymentAmount();
+        });
+    }
+}
+
+function updatePaymentAmount() {
+    const pointInput = document.getElementById('pointInput');
+    const paymentButton = document.getElementById('tossPaymentBtn');
+    const finalAmountDisplay = document.getElementById('finalAmountDisplay');
+    const pointDiscountRow = document.querySelector('.point-discount-row');
+    const pointDiscountValue = document.querySelector('.point-discount-value');
+    
+    if (!pointInput || !paymentButton) return;
+
+    const originalFinalAmount = parseInt(pointInput.getAttribute('data-final-amount')) || 0;
+    const usedPoints = window.usedPoints || 0;
+    const newFinalAmount = originalFinalAmount - usedPoints;
+
+    paymentButton.setAttribute('data-amount', newFinalAmount);
+    const paymentText = paymentButton.querySelector('.payment-text');
+    if (paymentText) {
+        const formattedAmount = newFinalAmount.toLocaleString();
+        if (window.selectedPaymentMethod === 'virtual') {
+            paymentText.textContent = `${formattedAmount}원 가상계좌 발급`;
+        } else {
+            paymentText.textContent = `${formattedAmount}원 결제하기`;
+        }
+    }
+
+    if (finalAmountDisplay) {
+        finalAmountDisplay.textContent = newFinalAmount.toLocaleString() + '원';
+    }
+
+    if (pointDiscountRow && pointDiscountValue) {
+        if (usedPoints > 0) {
+            pointDiscountRow.style.display = 'flex';
+            pointDiscountValue.textContent = `-${usedPoints.toLocaleString()}원`;
+        } else {
+            pointDiscountRow.style.display = 'none';
+        }
     }
 }
 
@@ -255,6 +358,11 @@ function removeErrorMessage(field) {
 
 function calculateTotalAmount() {
     const paymentButton = document.getElementById('tossPaymentBtn');
+    const pointInput = document.getElementById('pointInput');
+    const finalAmountDisplay = document.getElementById('finalAmountDisplay');
+    const pointDiscountRow = document.querySelector('.point-discount-row');
+    const pointDiscountValue = document.querySelector('.point-discount-value');
+    
     if (!paymentButton) {
         return;
     }
@@ -266,13 +374,37 @@ function calculateTotalAmount() {
     }
     
     const discountAmount = getCurrentDiscountAmount();
-    const finalAmount = originalAmount - discountAmount;
+    const usedPoints = window.usedPoints || 0;
+    const finalAmount = originalAmount - discountAmount - usedPoints;
     
     const paymentText = paymentButton.querySelector('.payment-text');
     
     if (paymentText) {
-        paymentText.textContent = `${finalAmount.toLocaleString()}원 결제하기`;
+        const formattedAmount = finalAmount.toLocaleString();
+        if (window.selectedPaymentMethod === 'virtual') {
+            paymentText.textContent = `${formattedAmount}원 가상계좌 발급`;
+        } else {
+            paymentText.textContent = `${formattedAmount}원 결제하기`;
+        }
         paymentButton.setAttribute('data-amount', finalAmount);
+    }
+
+    if (finalAmountDisplay) {
+        finalAmountDisplay.textContent = finalAmount.toLocaleString() + '원';
+    }
+
+    if (pointDiscountRow && pointDiscountValue) {
+        if (usedPoints > 0) {
+            pointDiscountRow.style.display = 'flex';
+            pointDiscountValue.textContent = `-${usedPoints.toLocaleString()}원`;
+        } else {
+            pointDiscountRow.style.display = 'none';
+        }
+    }
+
+    if (pointInput) {
+        const newMaxUsable = originalAmount - discountAmount;
+        pointInput.setAttribute('data-final-amount', newMaxUsable);
     }
 }
 
@@ -434,6 +566,39 @@ function initializeTossPaymentWidget(paymentData, amount) {
     });
 }
 
+function validateDeliveryForm() {
+    const recipientName = document.getElementById('recipientName');
+    const addressInput = document.querySelector('.address-input');
+    const phone1 = document.getElementById('phone1');
+    const phone2 = document.getElementById('phone2');
+    const phone3 = document.getElementById('phone3');
+    const emailId = document.getElementById('emailId');
+    const emailDomain = document.getElementById('emailDomain');
+
+    if (!recipientName || !recipientName.value.trim()) {
+        return { valid: false, message: '받는사람을 입력해주세요.' };
+    }
+
+    if (!addressInput || !addressInput.value.trim()) {
+        return { valid: false, message: '주소를 입력해주세요.' };
+    }
+
+    if (!phone1 || !phone2 || !phone3 ||
+        !phone1.value.trim() || !phone2.value.trim() || !phone3.value.trim()) {
+        return { valid: false, message: '휴대전화를 입력해주세요.' };
+    }
+
+    if (!emailId || !emailId.value.trim()) {
+        return { valid: false, message: '이메일을 입력해주세요.' };
+    }
+
+    if (!emailDomain || !emailDomain.value.trim()) {
+        return { valid: false, message: '이메일 도메인을 선택해주세요.' };
+    }
+
+    return { valid: true, message: '' };
+}
+
 function setupTossPayment() {
     const tossPaymentBtn = document.getElementById('tossPaymentBtn');
     if (!tossPaymentBtn) {
@@ -442,6 +607,18 @@ function setupTossPayment() {
     
     tossPaymentBtn.addEventListener('click', function(e) {
         e.preventDefault();
+        
+        const validation = validateDeliveryForm();
+        if (!validation.valid) {
+            alert(validation.message);
+            return;
+        }
+
+        const usedPoints = window.usedPoints || 0;
+        if (usedPoints > 0 && usedPoints < 1000) {
+            alert('포인트는 최소 1,000P 이상부터 사용 가능합니다.');
+            return;
+        }
         
         const preOrderKey = tossPaymentBtn.getAttribute('data-pre-order-key');
         const amount = parseInt(tossPaymentBtn.getAttribute('data-amount')) || 0;
@@ -452,11 +629,19 @@ function setupTossPayment() {
         }
         
         if (amount <= 0) {
-            alert('결제 금액이 올바르지 않습니다.');
+            if (usedPoints < 1000) {
+                alert('포인트는 최소 1,000P 이상부터 사용 가능합니다.');
+                return;
+            }
+            requestPointOnlyPayment(preOrderKey, usedPoints);
             return;
         }
         
-        requestTossPayment(preOrderKey, amount);
+        if (window.selectedPaymentMethod === 'virtual') {
+            requestVirtualAccountPayment(preOrderKey, amount);
+        } else {
+            requestTossPayment(preOrderKey, amount);
+        }
     });
 }
 
@@ -474,7 +659,8 @@ function requestTossPayment(preOrderKey, amount) {
             'X-CSRFToken': getCsrfToken()
         },
         body: JSON.stringify({
-            preOrderKey: preOrderKey
+            preOrderKey: preOrderKey,
+            usedPoint: window.usedPoints || 0
         })
     })
     .then(response => response.json())
@@ -511,4 +697,175 @@ function getCsrfToken() {
     }
     
     return '';
+}
+
+function requestPointOnlyPayment(preOrderKey, usedPoints) {
+    const paymentButton = document.getElementById('tossPaymentBtn');
+    const originalText = paymentButton.innerHTML;
+    
+    paymentButton.innerHTML = '<span class="payment-text">포인트 결제 처리 중...</span>';
+    paymentButton.disabled = true;
+    
+    fetch('/payments/point-only/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            preOrderKey: preOrderKey,
+            usedPoint: usedPoints
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirectUrl || '/orders/status/';
+        } else {
+            alert(data.error || '포인트 결제에 실패했습니다.');
+            paymentButton.innerHTML = originalText;
+            paymentButton.disabled = false;
+        }
+    })
+    .catch(error => {
+        alert('포인트 결제 요청 중 오류가 발생했습니다.');
+        paymentButton.innerHTML = originalText;
+        paymentButton.disabled = false;
+    });
+}
+
+function requestVirtualAccountPayment(preOrderKey, amount) {
+    const bankSelect = document.getElementById('bankSelect');
+    const depositorName = document.getElementById('depositorName');
+    const paymentButton = document.getElementById('tossPaymentBtn');
+    
+    if (!bankSelect || !bankSelect.value) {
+        alert('입금 은행을 선택해주세요.');
+        return;
+    }
+    
+    if (!depositorName || !depositorName.value.trim()) {
+        alert('입금자명을 입력해주세요.');
+        return;
+    }
+    
+    const originalText = paymentButton.innerHTML;
+    paymentButton.innerHTML = '<span class="payment-text">가상계좌 발급 중...</span>';
+    paymentButton.disabled = true;
+    
+    fetch('/orders/virtual/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            preOrderKey: preOrderKey
+        })
+    })
+    .then(response => response.json())
+    .then(orderData => {
+        if (!orderData.success && !orderData.orderId) {
+            throw new Error(orderData.error || '주문 생성에 실패했습니다.');
+        }
+        
+        const orderId = orderData.orderId;
+        
+        return fetch('/payments/toss/virtual/request/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                orderId: orderId,
+                customerName: depositorName.value.trim(),
+                bank: bankSelect.value
+            })
+        });
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showVirtualAccountResult(data);
+        } else {
+            throw new Error(data.error || '가상계좌 발급에 실패했습니다.');
+        }
+    })
+    .catch(error => {
+        alert(error.message || '가상계좌 발급 중 오류가 발생했습니다.');
+        paymentButton.innerHTML = originalText;
+        paymentButton.disabled = false;
+    });
+}
+
+function showVirtualAccountResult(data) {
+    let modal = document.getElementById('virtualResultModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'virtualResultModal';
+        modal.className = 'virtual-result-modal';
+        document.body.appendChild(modal);
+    }
+    
+    const bankNames = {
+        'KOOKMIN': '국민은행',
+        'SHINHAN': '신한은행',
+        'WOORI': '우리은행',
+        'NH': '농협은행',
+    };
+    
+    const bankName = bankNames[data.bank] || data.bank;
+    const dueDate = data.due_date ? formatDueDate(data.due_date) : '24시간 내';
+    
+    modal.innerHTML = `
+        <div class="virtual-result-content">
+            <div class="virtual-result-icon">🏦</div>
+            <h3 class="virtual-result-title">가상계좌가 발급되었습니다</h3>
+            <div class="virtual-result-info">
+                <div class="virtual-result-row">
+                    <span class="label">은행</span>
+                    <span class="value">${bankName}</span>
+                </div>
+                <div class="virtual-result-row">
+                    <span class="label">계좌번호</span>
+                    <span class="value account-number">${data.account_number}</span>
+                </div>
+                <div class="virtual-result-row">
+                    <span class="label">예금주</span>
+                    <span class="value">${data.account_holder}</span>
+                </div>
+                <div class="virtual-result-row">
+                    <span class="label">입금기한</span>
+                    <span class="value">${dueDate}</span>
+                </div>
+            </div>
+            <p style="font-size: 13px; color: #6b7280; margin-bottom: 20px;">
+                위 계좌로 입금해주시면 자동으로 결제가 완료됩니다.
+            </p>
+            <button type="button" class="virtual-result-btn" onclick="closeVirtualResultModal()">
+                확인
+            </button>
+        </div>
+    `;
+    
+    modal.classList.add('show');
+}
+
+function closeVirtualResultModal() {
+    const modal = document.getElementById('virtualResultModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+    window.location.href = '/users/mypage/orders/';
+}
+
+function formatDueDate(dateString) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}.${month}.${day} ${hours}:${minutes}까지`;
 }

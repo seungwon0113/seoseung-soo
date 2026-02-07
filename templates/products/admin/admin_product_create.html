@@ -60,6 +60,22 @@
                         <div class="form-error">{{ form.colors.errors.0 }}</div>
                     {% endif %}
                 </div>
+                <div class="form-group">
+                    <label for="{{ form.sizes.id_for_label }}" class="form-label">사이즈</label>
+                    <div class="size-selector">
+                        {% for size in sizes %}
+                        <label class="size-checkbox-label">
+                            <input type="checkbox" name="sizes" value="{{ size.id }}" 
+                                   {% if size.id in form.sizes.value %}checked{% endif %}
+                                   class="size-checkbox" id="size_{{ size.id }}">
+                            <span class="size-label">{{ size.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% if form.sizes.errors %}
+                        <div class="form-error">{{ form.sizes.errors.0 }}</div>
+                    {% endif %}
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="{{ form.price.id_for_label }}" class="form-label">가격 *</label>
